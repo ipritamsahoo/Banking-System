@@ -6,6 +6,8 @@
 #define MAX_REQUESTS 100
 #define FILENAME "accounts.txt"
 #define FILENAME_1 "requests.txt"
+#define TRANSACTION_LIMIT 100
+#define ADMIN_PASSWORD "admin123" // Admin password
 
 // Structure for account creation requests
 struct AccountRequest
@@ -15,7 +17,8 @@ struct AccountRequest
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
-    char status[10]; // "Pending", "Approved", "Rejected"
+    char password[50]; // Customer's chosen password
+    char status[10];   // "Pending", "Approved", "Rejected"
 };
 
 // Structure for active bank accounts
@@ -26,15 +29,35 @@ struct Account
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
+    char password[50]; // Stored password for login
     float balance;
 };
 
-// Global lists for requests and approved accounts
+// Structure for a transaction record
+struct Transaction
+{
+    char from[100];
+    char to[100];
+    float amount;
+};
+
+// Global lists for requests, approved accounts, and transactions
 struct AccountRequest accountRequests[MAX_REQUESTS];
 struct Account accounts[MAX_ACCOUNTS];
+struct Transaction transactions[TRANSACTION_LIMIT];
 int requestCount = 0;
 int accountCount = 0;
+int transactionCount = 0;
 int baseAccountNumber = 4690; // Base value for generating account numbers
+
+// Function prototypes
+void customerMenu();
+void customerPostLoginMenu(struct Account *loggedInCustomer);
+void saveAccountsToFile();
+void saveRequestedAccountsToFile();
+void loadAccountsFromFile();
+void loadRequestedAccountsFromFile();
+int findAccountByMobile(char *mobileNo, char *password);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -48,7 +71,7 @@ void saveAccountsToFile()
 
     for (int i = 0; i < accountCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].balance);
+        fprintf(file, "%d %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].balance);
     }
 
     fclose(file);
@@ -60,18 +83,19 @@ void saveRequestedAccountsToFile()
     FILE *file = fopen(FILENAME_1, "w");
     if (file == NULL)
     {
-        printf("Error opening file to save accounts!\n");
+        printf("Error opening file to save account requests!\n");
         return;
     }
 
     for (int i = 0; i < requestCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].status);
+        fprintf(file, "%d %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].status);
     }
 
     fclose(file);
 }
 
+// Function to load accounts from the text file
 void loadAccountsFromFile()
 {
     FILE *file = fopen(FILENAME, "r");
@@ -81,28 +105,13 @@ void loadAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %f",
-                  &accounts[accountCount].accountNumber,
-                  accounts[accountCount].name,
-                  accounts[accountCount].mobileNo,
-                  accounts[accountCount].aadharNo,
-                  accounts[accountCount].panNo,
-                  &accounts[accountCount].balance) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, &accounts[accountCount].balance) != EOF)
     {
-
         if (accounts[accountCount].accountNumber >= baseAccountNumber)
         {
             baseAccountNumber = accounts[accountCount].accountNumber + 1;
         }
-
         accountCount++;
-
-        // Ensure we don't exceed the account limit
-        if (accountCount >= MAX_ACCOUNTS)
-        {
-            printf("Account limit exceeded!\n");
-            break;
-        }
     }
 
     fclose(file);
@@ -118,37 +127,19 @@ void loadRequestedAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s",
-                  &accountRequests[requestCount].requestID,
-                  accountRequests[requestCount].name,
-                  accountRequests[requestCount].mobileNo,
-                  accountRequests[requestCount].aadharNo,
-                  accountRequests[requestCount].panNo,
-                  accountRequests[requestCount].status) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].name, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].status) != EOF)
     {
-
         requestCount++;
-
-        // Ensure we don't exceed the request limit
-        if (requestCount >= MAX_REQUESTS)
-        {
-            printf("Request limit exceeded!\n");
-            break;
-        }
     }
 
     fclose(file);
 }
 
-// Function to request account creation (customer side)
+// Function to request account creation (customer side) with password confirmation
 void requestAccountCreation()
 {
-    if (requestCount >= MAX_REQUESTS)
-    {
-        printf("Maximum request limit reached!\n");
-        return;
-    }
     struct AccountRequest newRequest;
+    char confirmPassword[50]; // For confirming the password
 
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
     printf("Enter Your Name: ");
@@ -162,6 +153,27 @@ void requestAccountCreation()
 
     printf("Enter Your PAN No: ");
     scanf("%s", newRequest.panNo);
+
+    // Password confirmation loop
+    while (1)
+    {
+        printf("Set a Password for Your Account: ");
+        scanf("%s", newRequest.password);
+
+        printf("Confirm Your Password: ");
+        scanf("%s", confirmPassword);
+
+        if (strcmp(newRequest.password, confirmPassword) == 0)
+        {
+            // Passwords match, proceed
+            break;
+        }
+        else
+        {
+            // Passwords don't match, prompt to re-enter
+            printf("Passwords do not match! Please retype your password.\n");
+        }
+    }
 
     strcpy(newRequest.status, "Pending"); // Initial status is pending
 
@@ -214,6 +226,7 @@ void approveOrRejectRequest()
                 strcpy(newAccount.mobileNo, accountRequests[i].mobileNo);
                 strcpy(newAccount.aadharNo, accountRequests[i].aadharNo);
                 strcpy(newAccount.panNo, accountRequests[i].panNo);
+                strcpy(newAccount.password, accountRequests[i].password);
                 newAccount.balance = 0.0; // Initial balance
 
                 // Add new account to the system
@@ -243,28 +256,133 @@ void approveOrRejectRequest()
 // Function to display all approved accounts
 void displayAllAccounts()
 {
-    printf("Approved Accounts:\n\nAccount No\tName\tMobile No\tBalance\n");
+    printf("Approved Accounts:\n\nAccount No\tName\tMobile No\tAadhar No\tPAN No\n");
     for (int i = 0; i < accountCount; i++)
     {
-        printf("XXXXXXXX%d\t%s\t%s\t%.2f\n",
-               accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].balance);
+        printf("XXXXXXXX%d\t%s\t%s\t%s\t%s\n",
+               accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
     }
 }
 
-int main()
+// Function for admin menu
+void adminMenu()
 {
     int choice;
-
-    loadAccountsFromFile();          // Load existing accounts from file
-    loadRequestedAccountsFromFile(); // Load requested pending accounts from file
-
     while (1)
     {
-        printf("1. Request Account Creation (Customer)\n");
-        printf("2. View Pending Requests (Admin)\n");
-        printf("3. Approve/Reject Requests (Admin)\n");
-        printf("4. View All Accounts (Admin)\n");
-        printf("5. Exit\n");
+        printf("Admin Menu:\n");
+        printf("1. View Pending Requests\n");
+        printf("2. Approve/Reject Requests\n");
+        printf("3. View All Accounts\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice)
+        {
+        case 1:
+            viewPendingRequests();
+            break;
+        case 2:
+            approveOrRejectRequest();
+            break;
+        case 3:
+            displayAllAccounts();
+            break;
+        case 4:
+            return;
+        default:
+            printf("Invalid choice! Please try again.\n");
+        }
+    }
+}
+
+// Function for customer login
+int customerLogin()
+{
+    char mobileNo[100], password[50];
+
+    printf("Enter Your Mobile Number: ");
+    scanf("%s", mobileNo);
+    printf("Enter Your Password: ");
+    scanf("%s", password);
+
+    int index = findAccountByMobile(mobileNo, password);
+    if (index == -1)
+    {
+        printf("Invalid mobile number or password! Try again.\n");
+        return 0;
+    }
+    else
+    {
+        printf("Login successful!\n");
+        customerPostLoginMenu(&accounts[index]);
+        return 1;
+    }
+}
+
+// Function to find an account by mobile number and password
+int findAccountByMobile(char *mobileNo, char *password)
+{
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (strcmp(accounts[i].mobileNo, mobileNo) == 0 && strcmp(accounts[i].password, password) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Function for post-login customer menu
+void customerPostLoginMenu(struct Account *loggedInCustomer)
+{
+    int choice;
+    while (1)
+    {
+        printf("\nCustomer Menu:\n");
+        printf("1. View Account Details\n");
+        printf("2. Check Balance\n");
+        printf("3. Money Transfer\n");
+        printf("4. View Transactions\n");
+        printf("5. Logout\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice)
+        {
+        case 1:
+            printf("Account Number: XXXXXXXX%d\nName: %s\nMobile No: %s\n",
+                   loggedInCustomer->accountNumber, loggedInCustomer->name, loggedInCustomer->mobileNo);
+            break;
+        case 2:
+            printf("Current Balance: %.2f\n", loggedInCustomer->balance);
+            break;
+        case 3:
+            // Implement money transfer logic
+            break;
+        case 4:
+            // Implement viewing transactions logic
+            break;
+        case 5:
+            printf("Logging out...\n");
+            return;
+        default:
+            printf("Invalid choice! Please try again.\n");
+        }
+    }
+}
+
+// Function for customer menu (initial options)
+void customerMenu()
+{
+    int choice;
+    while (1)
+    {
+        printf("\nCustomer Menu:\n");
+        printf("1. Request Account Creation\n");
+        printf("2. Login\n");
+        printf("3. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -274,22 +392,59 @@ int main()
             requestAccountCreation();
             break;
         case 2:
-            viewPendingRequests();
+            if (customerLogin())
+            {
+                // Successful login, proceed to post-login menu
+            }
             break;
         case 3:
-            approveOrRejectRequest();
-            break;
-        case 4:
-            displayAllAccounts();
-            break;
-        case 5:
-            saveAccountsToFile();          // Save accounts before exiting
-            saveRequestedAccountsToFile(); // Save requested accounts before exiting
-            return 0;
+            return;
         default:
-            printf("Invalid choice! Please try again.\n\n");
+            printf("Invalid choice! Please try again.\n");
         }
     }
+}
+
+// Main function with role selection
+int main()
+{
+    loadAccountsFromFile();          // Load existing accounts
+    loadRequestedAccountsFromFile(); // Load existing account requests
+
+    int userType;
+    printf("Welcome to the Bank Management System!\n");
+    printf("Select your role:\n1. Customer\n2. Admin\nEnter your choice: ");
+    scanf("%d", &userType);
+
+    if (userType == 1)
+    {
+        // Customer Menu
+        customerMenu();
+    }
+    else if (userType == 2)
+    {
+        // Admin Menu with password protection
+        char password[20];
+        printf("Enter Admin Password: ");
+        scanf("%s", password);
+
+        if (strcmp(password, ADMIN_PASSWORD) == 0)
+        {
+            adminMenu();
+        }
+        else
+        {
+            printf("Incorrect password! Access denied.\n");
+        }
+    }
+    else
+    {
+        printf("Invalid selection!\n");
+    }
+
+    // Save all changes to files before exiting
+    saveAccountsToFile();
+    saveRequestedAccountsToFile();
 
     return 0;
 }
