@@ -17,7 +17,8 @@ struct AccountRequest
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
-    char password[50]; // Customer's chosen password
+    char password[50];
+    char transactionPin[6]; 
     char status[10];   // "Pending", "Approved", "Rejected"
 };
 
@@ -29,7 +30,8 @@ struct Account
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
-    char password[50]; // Stored password for login
+    char password[50]; 
+    char transactionPin[6];
     float balance;
 };
 
@@ -71,7 +73,7 @@ void saveAccountsToFile()
 
     for (int i = 0; i < accountCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].balance);
+        fprintf(file, "%d %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].balance);
     }
 
     fclose(file);
@@ -89,7 +91,7 @@ void saveRequestedAccountsToFile()
 
     for (int i = 0; i < requestCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].status);
+        fprintf(file, "%d %s %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].transactionPin, accountRequests[i].status);
     }
 
     fclose(file);
@@ -105,7 +107,7 @@ void loadAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, &accounts[accountCount].balance) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].balance) != EOF)
     {
         if (accounts[accountCount].accountNumber >= baseAccountNumber)
         {
@@ -127,7 +129,7 @@ void loadRequestedAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].name, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].status) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].name, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].transactionPin, accountRequests[requestCount].status) != EOF)
     {
         requestCount++;
     }
@@ -135,11 +137,12 @@ void loadRequestedAccountsFromFile()
     fclose(file);
 }
 
-// Function to request account creation (customer side) with password confirmation
-void requestAccountCreation()
-{
+// Function to request account creation (customer side) with password and PIN confirmation
+void requestAccountCreation() {
     struct AccountRequest newRequest;
-    char confirmPassword[50]; // For confirming the password
+    char confirmPassword[50];   // For confirming the password
+    char transactionPin[6];     // For storing the transaction PIN
+    char confirmTransactionPin[6];  // For confirming the transaction PIN
 
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
     printf("Enter Your Name: ");
@@ -155,32 +158,48 @@ void requestAccountCreation()
     scanf("%s", newRequest.panNo);
 
     // Password confirmation loop
-    while (1)
-    {
+    while (1) {
         printf("Set a Password for Your Account: ");
         scanf("%s", newRequest.password);
 
         printf("Confirm Your Password: ");
         scanf("%s", confirmPassword);
 
-        if (strcmp(newRequest.password, confirmPassword) == 0)
-        {
-            // Passwords match, proceed
-            break;
-        }
-        else
-        {
-            // Passwords don't match, prompt to re-enter
+        if (strcmp(newRequest.password, confirmPassword) == 0) {
+            break;  // Passwords match, proceed
+        } else {
             printf("Passwords do not match! Please retype your password.\n");
         }
     }
 
-    strcpy(newRequest.status, "Pending"); // Initial status is pending
+    // Transaction PIN confirmation loop
+    while (1) {
+        printf("Set a 4-digit Transaction PIN for Your Account: ");
+        scanf("%s", transactionPin);
 
+        if (strlen(transactionPin) != 4) {
+            printf("Invalid PIN! Please enter a 4-digit PIN.\n");
+            continue;
+        }
+
+        printf("Confirm Your Transaction PIN: ");
+        scanf("%s", confirmTransactionPin);
+
+        if (strcmp(transactionPin, confirmTransactionPin) == 0) {
+            strcpy(newRequest.transactionPin, transactionPin);  // Store the confirmed PIN
+            break;  // PINs match, proceed
+        } else {
+            printf("Transaction PINs do not match! Please retype your PIN.\n");
+        }
+    }
+
+    strcpy(newRequest.status, "Pending");  // Initial status is pending
+    
     // Save the request
     accountRequests[requestCount++] = newRequest;
     printf("Account Creation Request Submitted!\n\n");
 }
+
 
 // Function for admin to view all pending requests
 void viewPendingRequests()
@@ -227,6 +246,7 @@ void approveOrRejectRequest()
                 strcpy(newAccount.aadharNo, accountRequests[i].aadharNo);
                 strcpy(newAccount.panNo, accountRequests[i].panNo);
                 strcpy(newAccount.password, accountRequests[i].password);
+                strcpy(newAccount.transactionPin, accountRequests[i].transactionPin);
                 newAccount.balance = 0.0; // Initial balance
 
                 // Add new account to the system
@@ -359,10 +379,10 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
             printf("Current Balance: %.2f\n", loggedInCustomer->balance);
             break;
         case 3:
-            // Implement money transfer logic
+            // Implement money transfer logic 
             break;
         case 4:
-            // Implement viewing transactions logic
+            // Implement viewing transactions logic 
             break;
         case 5:
             printf("Logging out...\n");
