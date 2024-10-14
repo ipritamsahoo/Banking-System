@@ -6,7 +6,6 @@
 #define MAX_REQUESTS 100
 #define FILENAME "accounts.txt"
 #define FILENAME_1 "requests.txt"
-#define TRANSACTION_LIMIT 100
 #define ADMIN_PASSWORD "admin123" // Admin password
 
 // Structure for account creation requests
@@ -35,21 +34,12 @@ struct Account
     float balance;
 };
 
-// Structure for a transaction record
-struct Transaction
-{
-    char from[100];
-    char to[100];
-    float amount;
-};
 
 // Global lists for requests, approved accounts, and transactions
 struct AccountRequest accountRequests[MAX_REQUESTS];
 struct Account accounts[MAX_ACCOUNTS];
-struct Transaction transactions[TRANSACTION_LIMIT];
 int requestCount = 0;
 int accountCount = 0;
-int transactionCount = 0;
 int baseAccountNumber = 4690; // Base value for generating account numbers
 
 // Function prototypes
