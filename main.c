@@ -50,6 +50,7 @@ void saveRequestedAccountsToFile();
 void loadAccountsFromFile();
 void loadRequestedAccountsFromFile();
 int findAccountByMobile(char *mobileNo, char *password);
+void transferMoney(struct Account *loggedInCustomer);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -274,6 +275,53 @@ void displayAllAccounts()
     }
 }
 
+// Function to transfer money from one account to another
+void transferMoney(struct Account *loggedInCustomer)
+{
+    int receiverAccountNumber;
+    float amount;
+
+    printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
+    scanf("%d", &receiverAccountNumber);
+
+    printf("Enter Amount to Transfer: ");
+    scanf("%f", &amount);
+
+    // Find receiver's account
+    int receiverIndex = -1;
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (accounts[i].accountNumber == receiverAccountNumber)
+        {
+            receiverIndex = i;
+            break;
+        }
+    }
+
+    // Check if receiver's account exists
+    if (receiverIndex == -1)
+    {
+        printf("Receiver's account not found!\n");
+        return;
+    }
+
+    // Check if sender has sufficient balance
+    if (loggedInCustomer->balance < amount)
+    {
+        printf("Insufficient balance!\n");
+        return;
+    }
+
+    // Perform transfer
+    loggedInCustomer->balance -= amount;
+    accounts[receiverIndex].balance += amount;
+
+    printf("Transfer successful! New balance: %.2f\n", loggedInCustomer->balance);
+
+    // Save updated accounts to file
+    saveAccountsToFile();
+}
+
 // Function for admin menu
 void adminMenu()
 {
@@ -369,7 +417,7 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
             printf("Current Balance: %.2f\n", loggedInCustomer->balance);
             break;
         case 3:
-            // Implement money transfer logic 
+            transferMoney(loggedInCustomer);
             break;
         case 4:
             // Implement viewing transactions logic 
