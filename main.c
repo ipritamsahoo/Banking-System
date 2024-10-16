@@ -17,8 +17,8 @@ struct AccountRequest
     char aadharNo[100];
     char panNo[100];
     char password[50];
-    char transactionPin[6]; 
-    char status[10];   // "Pending", "Approved", "Rejected"
+    char transactionPin[6];
+    char status[10]; // "Pending", "Approved", "Rejected"
 };
 
 // Structure for active bank accounts
@@ -29,17 +29,26 @@ struct Account
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
-    char password[50]; 
+    char password[50];
     char transactionPin[6];
     float balance;
 };
 
+// Structure for transactions
+struct Transaction
+{
+    int senderAccountNumber;
+    int receiverAccountNumber;
+    float amount;
+};
 
 // Global lists for requests, approved accounts, and transactions
 struct AccountRequest accountRequests[MAX_REQUESTS];
 struct Account accounts[MAX_ACCOUNTS];
+struct Transaction transactions[MAX_REQUESTS];
 int requestCount = 0;
 int accountCount = 0;
+int transactionCount = 0;
 int baseAccountNumber = 4690; // Base value for generating account numbers
 
 // Function prototypes
@@ -88,6 +97,42 @@ void saveRequestedAccountsToFile()
     fclose(file);
 }
 
+// Function to save transactions to a text file
+void saveTransactionsToFile()
+{
+    FILE *file = fopen("transactions.txt", "w");
+    if (file == NULL)
+    {
+        printf("Error opening file to save transactions!\n");
+        return;
+    }
+
+    for (int i = 0; i < transactionCount; i++)
+    {
+        fprintf(file, "%d %d %.2f\n", transactions[i].senderAccountNumber, transactions[i].receiverAccountNumber, transactions[i].amount);
+    }
+
+    fclose(file);
+}
+
+// Function to load transactions from a text file
+void loadTransactionsFromFile()
+{
+    FILE *file = fopen("transactions.txt", "r");
+    if (file == NULL)
+    {
+        printf("No existing transaction file found, starting fresh.\n");
+        return;
+    }
+
+    while (fscanf(file, "%d %d %f", &transactions[transactionCount].senderAccountNumber, &transactions[transactionCount].receiverAccountNumber, &transactions[transactionCount].amount) != EOF)
+    {
+        transactionCount++;
+    }
+
+    fclose(file);
+}
+
 // Function to load accounts from the text file
 void loadAccountsFromFile()
 {
@@ -129,11 +174,12 @@ void loadRequestedAccountsFromFile()
 }
 
 // Function to request account creation (customer side) with password and PIN confirmation
-void requestAccountCreation() {
+void requestAccountCreation()
+{
     struct AccountRequest newRequest;
-    char confirmPassword[50];   // For confirming the password
-    char transactionPin[6];     // For storing the transaction PIN
-    char confirmTransactionPin[6];  // For confirming the transaction PIN
+    char confirmPassword[50];      // For confirming the password
+    char transactionPin[6];        // For storing the transaction PIN
+    char confirmTransactionPin[6]; // For confirming the transaction PIN
 
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
     printf("Enter Your Name: ");
@@ -149,26 +195,32 @@ void requestAccountCreation() {
     scanf("%s", newRequest.panNo);
 
     // Password confirmation loop
-    while (1) {
+    while (1)
+    {
         printf("Set a Password for Your Account: ");
         scanf("%s", newRequest.password);
 
         printf("Confirm Your Password: ");
         scanf("%s", confirmPassword);
 
-        if (strcmp(newRequest.password, confirmPassword) == 0) {
-            break;  // Passwords match, proceed
-        } else {
+        if (strcmp(newRequest.password, confirmPassword) == 0)
+        {
+            break; // Passwords match, proceed
+        }
+        else
+        {
             printf("Passwords do not match! Please retype your password.\n");
         }
     }
 
     // Transaction PIN confirmation loop
-    while (1) {
+    while (1)
+    {
         printf("Set a 4-digit Transaction PIN for Your Account: ");
         scanf("%s", transactionPin);
 
-        if (strlen(transactionPin) != 4) {
+        if (strlen(transactionPin) != 4)
+        {
             printf("Invalid PIN! Please enter a 4-digit PIN.\n");
             continue;
         }
@@ -176,21 +228,23 @@ void requestAccountCreation() {
         printf("Confirm Your Transaction PIN: ");
         scanf("%s", confirmTransactionPin);
 
-        if (strcmp(transactionPin, confirmTransactionPin) == 0) {
-            strcpy(newRequest.transactionPin, transactionPin);  // Store the confirmed PIN
-            break;  // PINs match, proceed
-        } else {
+        if (strcmp(transactionPin, confirmTransactionPin) == 0)
+        {
+            strcpy(newRequest.transactionPin, transactionPin); // Store the confirmed PIN
+            break;                                             // PINs match, proceed
+        }
+        else
+        {
             printf("Transaction PINs do not match! Please retype your PIN.\n");
         }
     }
 
-    strcpy(newRequest.status, "Pending");  // Initial status is pending
-    
+    strcpy(newRequest.status, "Pending"); // Initial status is pending
+
     // Save the request
     accountRequests[requestCount++] = newRequest;
     printf("Account Creation Request Submitted!\n\n");
 }
-
 
 // Function for admin to view all pending requests
 void viewPendingRequests()
@@ -275,53 +329,6 @@ void displayAllAccounts()
     }
 }
 
-// Function to transfer money from one account to another
-void transferMoney(struct Account *loggedInCustomer)
-{
-    int receiverAccountNumber;
-    float amount;
-
-    printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
-    scanf("%d", &receiverAccountNumber);
-
-    printf("Enter Amount to Transfer: ");
-    scanf("%f", &amount);
-
-    // Find receiver's account
-    int receiverIndex = -1;
-    for (int i = 0; i < accountCount; i++)
-    {
-        if (accounts[i].accountNumber == receiverAccountNumber)
-        {
-            receiverIndex = i;
-            break;
-        }
-    }
-
-    // Check if receiver's account exists
-    if (receiverIndex == -1)
-    {
-        printf("Receiver's account not found!\n");
-        return;
-    }
-
-    // Check if sender has sufficient balance
-    if (loggedInCustomer->balance < amount)
-    {
-        printf("Insufficient balance!\n");
-        return;
-    }
-
-    // Perform transfer
-    loggedInCustomer->balance -= amount;
-    accounts[receiverIndex].balance += amount;
-
-    printf("Transfer successful! New balance: %.2f\n", loggedInCustomer->balance);
-
-    // Save updated accounts to file
-    saveAccountsToFile();
-}
-
 // Function for admin menu
 void adminMenu()
 {
@@ -392,6 +399,96 @@ int findAccountByMobile(char *mobileNo, char *password)
     return -1;
 }
 
+// Function to transfer money from one account to another
+void transferMoney(struct Account *loggedInCustomer)
+{
+    int receiverAccountNumber;
+    float amount;
+    char enteredPin[10];
+
+    printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
+    scanf("%d", &receiverAccountNumber);
+
+    // Find receiver's account
+    int receiverIndex = -1;
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (accounts[i].accountNumber == receiverAccountNumber)
+        {
+            receiverIndex = i;
+            break;
+        }
+    }
+
+    // Check if receiver's account exists
+    if (receiverIndex == -1)
+    {
+        printf("Receiver's account not found!\n");
+        return;
+    }
+
+    printf("Enter Amount to Transfer: ");
+    scanf("%f", &amount);
+
+    // Check if sender has sufficient balance
+    if (loggedInCustomer->balance < amount)
+    {
+        printf("Insufficient balance!\n");
+        return;
+    }
+
+    // Verify transaction PIN
+    printf("Enter your 4-digit transaction PIN: ");
+    scanf("%s", enteredPin);
+
+    if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
+    {
+        printf("Invalid transaction PIN!\n");
+        return;
+    }
+
+    // Perform transfer
+    loggedInCustomer->balance -= amount;
+    accounts[receiverIndex].balance += amount;
+
+    // Record the transaction
+    transactions[transactionCount].senderAccountNumber = loggedInCustomer->accountNumber;
+    transactions[transactionCount].receiverAccountNumber = accounts[receiverIndex].accountNumber;
+    transactions[transactionCount].amount = amount;
+    transactionCount++;
+
+    printf("Transfer successful! New balance: %.2f\n", loggedInCustomer->balance);
+
+    // Save updated accounts and transactions to file
+    saveAccountsToFile();
+    saveTransactionsToFile();
+}
+
+// Function to view transaction history
+void viewTransactionHistory(struct Account *loggedInCustomer)
+{
+    printf("\nTransaction History for Account Number XXXXXXXX%d:\n", loggedInCustomer->accountNumber);
+    printf("--------------------------------------------------------------------\n");
+    printf("|   Type   |     Amount    |   Related Account   |\n");
+    printf("--------------------------------------------------------------------\n");
+
+    for (int i = 0; i < transactionCount; i++)
+    {
+        if (transactions[i].senderAccountNumber == loggedInCustomer->accountNumber)
+        {
+            // This is a debit transaction
+            printf("|  Debit   |    %.2f     |  To   XXXXXXXX%d   |\n", transactions[i].amount, transactions[i].receiverAccountNumber);
+        }
+        else if (transactions[i].receiverAccountNumber == loggedInCustomer->accountNumber)
+        {
+            // This is a credit transaction
+            printf("|  Credit  |    %.2f     |  From XXXXXXXX%d   |\n", transactions[i].amount, transactions[i].senderAccountNumber);
+        }
+    }
+
+    printf("--------------------------------------------------------------------\n");
+}
+
 // Function for post-login customer menu
 void customerPostLoginMenu(struct Account *loggedInCustomer)
 {
@@ -420,7 +517,7 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
             transferMoney(loggedInCustomer);
             break;
         case 4:
-            // Implement viewing transactions logic 
+            viewTransactionHistory(loggedInCustomer);
             break;
         case 5:
             printf("Logging out...\n");
@@ -468,6 +565,7 @@ int main()
 {
     loadAccountsFromFile();          // Load existing accounts
     loadRequestedAccountsFromFile(); // Load existing account requests
+    loadTransactionsFromFile();
 
     int userType;
     printf("Welcome to the Bank Management System!\n");
@@ -503,6 +601,7 @@ int main()
     // Save all changes to files before exiting
     saveAccountsToFile();
     saveRequestedAccountsToFile();
+    saveTransactionsToFile();
 
     return 0;
 }
