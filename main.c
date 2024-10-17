@@ -409,7 +409,6 @@ void transferMoney(struct Account *loggedInCustomer)
     printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
     scanf("%d", &receiverAccountNumber);
 
-    //blocked self transfer
     if (loggedInCustomer->accountNumber == receiverAccountNumber)
     {
         printf("Invalid Account !!!");
@@ -532,6 +531,10 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         default:
             printf("Invalid choice! Please try again.\n");
         }
+        // After showing output, prompt to press any key to return to menu
+        printf("\nPress any key to return to the main menu...");
+        getchar(); // This captures the newline from the previous input
+        getchar(); // This waits for the actual key press
     }
 }
 
