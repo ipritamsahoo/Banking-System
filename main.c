@@ -339,7 +339,7 @@ void adminMenu()
         printf("1. View Pending Requests\n");
         printf("2. Approve/Reject Requests\n");
         printf("3. View All Accounts\n");
-        printf("4. Exit\n");
+        printf("4. Go To Home\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -359,6 +359,10 @@ void adminMenu()
         default:
             printf("Invalid choice! Please try again.\n");
         }
+
+        printf("\nPress enter to return to the previous menu...");
+        getchar();
+        getchar();
     }
 }
 
@@ -531,10 +535,10 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         default:
             printf("Invalid choice! Please try again.\n");
         }
-        // After showing output, prompt to press any key to return to menu
-        printf("\nPress any key to return to the main menu...");
-        getchar(); // This captures the newline from the previous input
-        getchar(); // This waits for the actual key press
+
+        printf("\nPress enter to return to the previous menu...");
+        getchar();
+        getchar();
     }
 }
 
@@ -544,10 +548,10 @@ void customerMenu()
     int choice;
     while (1)
     {
-        printf("\nCustomer Menu:\n");
+        printf("\nYour Menu:\n");
         printf("1. Request Account Creation\n");
         printf("2. Login\n");
-        printf("3. Exit\n");
+        printf("3. Go To Home\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -563,6 +567,7 @@ void customerMenu()
             }
             break;
         case 3:
+            // Return to the main menu (exit customer menu loop)
             return;
         default:
             printf("Invalid choice! Please try again.\n");
@@ -578,34 +583,42 @@ int main()
     loadTransactionsFromFile();
 
     int userType;
-    printf("Welcome to the Bank Management System!\n");
-    printf("Select your role:\n1. Customer\n2. Admin\nEnter your choice: ");
-    scanf("%d", &userType);
-
-    if (userType == 1)
+    while (1) // This loop ensures that after exiting a menu, the user returns to the role selection.
     {
-        // Customer Menu
-        customerMenu();
-    }
-    else if (userType == 2)
-    {
-        // Admin Menu with password protection
-        char password[20];
-        printf("Enter Admin Password: ");
-        scanf("%s", password);
+        printf("Welcome to the PSD Bank!\n");
+        printf("Select your role:\n1. Customer\n2. Admin\n3. Exit\nEnter your choice: ");
+        scanf("%d", &userType);
 
-        if (strcmp(password, ADMIN_PASSWORD) == 0)
+        if (userType == 1)
         {
-            adminMenu();
+            // Customer Menu
+            customerMenu();
+        }
+        else if (userType == 2)
+        {
+            // Admin Menu with password protection
+            char password[20];
+            printf("Enter Admin Password: ");
+            scanf("%s", password);
+
+            if (strcmp(password, ADMIN_PASSWORD) == 0)
+            {
+                adminMenu();
+            }
+            else
+            {
+                printf("Incorrect password! Access denied.\n");
+            }
+        }
+        else if (userType == 3)
+        {
+            printf("Exiting the system. Goodbye!\n");
+            break; // This breaks the loop and exits the program when the user selects "Exit".
         }
         else
         {
-            printf("Incorrect password! Access denied.\n");
+            printf("Invalid selection! Please try again.\n");
         }
-    }
-    else
-    {
-        printf("Invalid selection!\n");
     }
 
     // Save all changes to files before exiting
