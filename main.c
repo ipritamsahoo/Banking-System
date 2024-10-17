@@ -409,6 +409,13 @@ void transferMoney(struct Account *loggedInCustomer)
     printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
     scanf("%d", &receiverAccountNumber);
 
+    //blocked self transfer
+    if (loggedInCustomer->accountNumber == receiverAccountNumber)
+    {
+        printf("Invalid Account !!!");
+        return;
+    }
+
     // Find receiver's account
     int receiverIndex = -1;
     for (int i = 0; i < accountCount; i++)
