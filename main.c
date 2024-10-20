@@ -35,6 +35,7 @@ struct Account
     char password[50];
     char transactionPin[6];
     float balance;
+    char status[10]; // "Active", "Frozen"
 };
 
 // Structure for transactions
@@ -102,6 +103,8 @@ void loadCardRequests();
 void saveCardRequests();
 void loadCards();
 void saveCards();
+void deleteAccount();
+void freezeOrUnfreezeAccount();
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -115,7 +118,7 @@ void saveAccountsToFile()
 
     for (int i = 0; i < accountCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].balance);
+        fprintf(file, "%d %s %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].status, accounts[i].balance);
     }
 
     fclose(file);
@@ -185,7 +188,7 @@ void loadAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].balance) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].status, &accounts[accountCount].balance) != EOF)
     {
         if (accounts[accountCount].accountNumber >= baseAccountNumber)
         {
@@ -409,6 +412,7 @@ void approveOrRejectRequest()
                 strcpy(newAccount.password, accountRequests[i].password);
                 strcpy(newAccount.transactionPin, accountRequests[i].transactionPin);
                 newAccount.balance = 0.0; // Initial balance
+                strcpy(newAccount.status, "Active");
 
                 // Add new account to the system
                 accounts[accountCount++] = newAccount;
@@ -457,7 +461,9 @@ void adminMenu()
         printf("3. View All Accounts\n");
         printf("4. View Pending Card Requests\n");
         printf("5. Approve/Reject Card Requests\n");
-        printf("6. Log Out\n");
+        printf("6. Freeze/Unfreeze an Account\n"); // New option for freezing/unfreezing accounts
+        printf("7. Delete an Account\n");          // Option for deleting an account
+        printf("8. Log Out\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -479,7 +485,13 @@ void adminMenu()
             approveOrRejectCardRequest();
             break;
         case 6:
-            return;
+            freezeOrUnfreezeAccount(); // Call freeze/unfreeze function
+            break;
+        case 7:
+            deleteAccount(); // Call the function to delete an account
+            break;
+        case 8:
+            return; // Log out
         default:
             printf("Invalid choice! Please try again.\n");
         }
@@ -504,6 +516,12 @@ int customerLogin()
     if (index == -1)
     {
         printf("Invalid mobile number or password! Try again.\n");
+        return 0;
+    }
+    else if (strcmp(accounts[index].status, "Frozen") == 0)
+    {
+        // Check if the account is frozen
+        printf("Your account is currently frozen. Please contact the admin.\n");
         return 0;
     }
     else
@@ -1058,6 +1076,132 @@ void blockOrUnblockCard(struct Card *card)
     else
     {
         printf("Card status is unknown.\n");
+    }
+}
+
+// Function to delete an account (admin-only)
+void deleteAccount()
+{
+    int accountNumber;
+    char confirmChoice;
+
+    printf("Enter Account Number to delete: ");
+    scanf("%d", &accountNumber);
+
+    int found = -1;
+    // Search for the account by account number
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (accounts[i].accountNumber == accountNumber)
+        {
+            found = i;
+            break;
+        }
+    }
+
+    // If account is found
+    if (found != -1)
+    {
+        printf("Account found: %s (Account No: XXXXXXXX%d)\n", accounts[found].name, accounts[found].accountNumber);
+        printf("Are you sure you want to delete this account?\n");
+        printf("1. Yes\n");
+        printf("2. No\n");
+        printf("Enter your choice: ");
+        scanf(" %c", &confirmChoice); // Adding space before %c to capture newline character properly
+
+        if (confirmChoice == '1') // User chose "Yes"
+        {
+            // Shift all accounts after the found index to the left
+            for (int i = found; i < accountCount - 1; i++)
+            {
+                accounts[i] = accounts[i + 1];
+            }
+            accountCount--; // Reduce the total account count
+
+            // Save the updated accounts to file
+            saveAccountsToFile();
+            printf("Account successfully deleted.\n");
+        }
+        else if (confirmChoice == '2') // User chose "No"
+        {
+            printf("Account deletion cancelled.\n");
+        }
+        else
+        {
+            printf("Invalid choice! Account deletion cancelled.\n");
+        }
+    }
+    else
+    {
+        printf("Account not found!\n");
+    }
+}
+
+// Function to freeze or unfreeze an account (admin-only)
+void freezeOrUnfreezeAccount()
+{
+    int accountNumber, choice;
+    printf("Enter Account Number to freeze/unfreeze: ");
+    scanf("%d", &accountNumber);
+
+    int found = -1;
+    // Search for the account by account number
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (accounts[i].accountNumber == accountNumber)
+        {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1)
+    {
+        // Check the current status of the account
+        printf("Account found: %s (Account No: XXXXXXXX%d)\n", accounts[found].name, accounts[found].accountNumber);
+        printf("Current Status: %s\n", accounts[found].status);
+        if (strcmp(accounts[found].status, "Active") == 0)
+        {
+            // If account is active, allow freezing
+            printf("1. Freeze Account\n2. Cancel\nEnter your choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1)
+            {
+                strcpy(accounts[found].status, "Frozen"); // Set account status to Frozen
+                saveAccountsToFile();
+                printf("Account has been frozen.\n");
+            }
+            else
+            {
+                printf("Operation cancelled.\n");
+            }
+        }
+        else if (strcmp(accounts[found].status, "Frozen") == 0)
+        {
+            // If account is frozen, allow unfreezing
+            printf("1. Unfreeze Account\n2. Cancel\nEnter your choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1)
+            {
+                strcpy(accounts[found].status, "Active"); // Set account status back to Active
+                saveAccountsToFile();
+                printf("Account has been unfrozen.\n");
+            }
+            else
+            {
+                printf("Operation cancelled.\n");
+            }
+        }
+        else
+        {
+            printf("Unknown account status!\n");
+        }
+    }
+    else
+    {
+        printf("Account not found!\n");
     }
 }
 
