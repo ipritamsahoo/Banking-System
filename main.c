@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-// #include <time.h>
 
 #define MAX_ACCOUNTS 100
 #define MAX_REQUESTS 100
@@ -105,6 +104,8 @@ void loadCards();
 void saveCards();
 void deleteAccount();
 void freezeOrUnfreezeAccount();
+void viewPendingUnfreezeRequests();
+void removeUnfreezeRequest(int accountNumber);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -292,7 +293,8 @@ void saveCards()
     fclose(file);
 }
 
-// Function to request account creation (customer side) with password and PIN confirmation
+
+// Function to request account creation (customer side)
 void requestAccountCreation()
 {
     struct AccountRequest newRequest;
@@ -411,7 +413,7 @@ void approveOrRejectRequest()
                 strcpy(newAccount.panNo, accountRequests[i].panNo);
                 strcpy(newAccount.password, accountRequests[i].password);
                 strcpy(newAccount.transactionPin, accountRequests[i].transactionPin);
-                newAccount.balance = 0.0; // Initial balance
+                newAccount.balance = 1000.0; // Initial balance
                 strcpy(newAccount.status, "Active");
 
                 // Add new account to the system
@@ -520,9 +522,32 @@ int customerLogin()
     }
     else if (strcmp(accounts[index].status, "Frozen") == 0)
     {
-        // Check if the account is frozen
         printf("Your account is currently frozen. Please contact the admin.\n");
-        return 0;
+
+        // Ask if they want to request to unfreeze the account
+        int choice;
+        printf("Do you want to request to unfreeze your account?\n1. Yes\n2. No\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        if (choice == 1)
+        {
+            // Send request to unfreeze
+            FILE *file = fopen("unfreezeRequests.txt", "a");
+            if (file == NULL)
+            {
+                printf("Error opening unfreeze request file!\n");
+                return 0;
+            }
+            fprintf(file, "%d %s\n", accounts[index].accountNumber, accounts[index].name); // Store account number and name
+            fclose(file);
+            printf("Your request to unfreeze your account has been submitted.\n");
+            return 0;
+        }
+        else
+        {
+            printf("No request submitted.\n");
+            return 0;
+        }
     }
     else
     {
@@ -1203,6 +1228,58 @@ void freezeOrUnfreezeAccount()
     {
         printf("Account not found!\n");
     }
+}
+
+void viewPendingUnfreezeRequests()
+{
+    FILE *file = fopen("unfreezeRequests.txt", "r");
+    if (file == NULL)
+    {
+        printf("No pending unfreeze requests found.\n");
+        return;
+    }
+
+    printf("Pending Unfreeze Requests:\nAccount Number\tName\n");
+    int accountNumber;
+    char name[100];
+
+    while (fscanf(file, "%d %s", &accountNumber, name) != EOF)
+    {
+        printf("%d\t%s\n", accountNumber, name);
+    }
+
+    fclose(file);
+}
+
+void removeUnfreezeRequest(int accountNumber)
+{
+    FILE *file = fopen("unfreezeRequests.txt", "r");
+    FILE *tempFile = fopen("temp.txt", "w");
+
+    if (file == NULL || tempFile == NULL)
+    {
+        printf("Error processing unfreeze request file!\n");
+        return;
+    }
+
+    int accNum;
+    char name[100];
+
+    // Copy all requests except the one for the unfrozen account
+    while (fscanf(file, "%d %s", &accNum, name) != EOF)
+    {
+        if (accNum != accountNumber) // Skip the unfrozen account
+        {
+            fprintf(tempFile, "%d %s\n", accNum, name);
+        }
+    }
+
+    fclose(file);
+    fclose(tempFile);
+
+    // Replace original file with the updated one
+    remove("unfreezeRequests.txt");
+    rename("temp.txt", "unfreezeRequests.txt");
 }
 
 // Main function with role selection
