@@ -293,7 +293,6 @@ void saveCards()
     fclose(file);
 }
 
-
 // Function to request account creation (customer side)
 void requestAccountCreation()
 {
@@ -463,9 +462,10 @@ void adminMenu()
         printf("3. View All Accounts\n");
         printf("4. View Pending Card Requests\n");
         printf("5. Approve/Reject Card Requests\n");
-        printf("6. Freeze/Unfreeze an Account\n"); // New option for freezing/unfreezing accounts
-        printf("7. Delete an Account\n");          // Option for deleting an account
-        printf("8. Log Out\n");
+        printf("6. View Pending Accounts to Unfreeze\n");
+        printf("7. Freeze/Unfreeze an Account\n");
+        printf("8. Delete an Account\n");
+        printf("9. Log Out\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -487,12 +487,15 @@ void adminMenu()
             approveOrRejectCardRequest();
             break;
         case 6:
-            freezeOrUnfreezeAccount(); // Call freeze/unfreeze function
+            viewPendingUnfreezeRequests();
             break;
         case 7:
-            deleteAccount(); // Call the function to delete an account
+            freezeOrUnfreezeAccount();
             break;
         case 8:
+            deleteAccount();
+            break;
+        case 9:
             return; // Log out
         default:
             printf("Invalid choice! Please try again.\n");
@@ -1245,7 +1248,7 @@ void viewPendingUnfreezeRequests()
 
     while (fscanf(file, "%d %s", &accountNumber, name) != EOF)
     {
-        printf("%d\t%s\n", accountNumber, name);
+        printf("XXXXXXXX%d\t%s\n", accountNumber, name);
     }
 
     fclose(file);
