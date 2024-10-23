@@ -14,7 +14,8 @@
 struct AccountRequest
 {
     int requestID;
-    char name[100];
+    char firstName[100];
+    char lastName[100];
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
@@ -27,7 +28,8 @@ struct AccountRequest
 struct Account
 {
     int accountNumber;
-    char name[100];
+    char firstName[100];
+    char lastName[100];
     char mobileNo[100];
     char aadharNo[100];
     char panNo[100];
@@ -119,7 +121,7 @@ void saveAccountsToFile()
 
     for (int i = 0; i < accountCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].status, accounts[i].balance);
+        fprintf(file, "%d %s %s %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].status, accounts[i].balance);
     }
 
     fclose(file);
@@ -137,7 +139,7 @@ void saveRequestedAccountsToFile()
 
     for (int i = 0; i < requestCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].transactionPin, accountRequests[i].status);
+        fprintf(file, "%d %s %s %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].transactionPin, accountRequests[i].status);
     }
 
     fclose(file);
@@ -189,7 +191,7 @@ void loadAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].name, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].status, &accounts[accountCount].balance) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].firstName, accounts[accountCount].lastName, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].status, &accounts[accountCount].balance) != EOF)
     {
         if (accounts[accountCount].accountNumber >= baseAccountNumber)
         {
@@ -211,7 +213,7 @@ void loadRequestedAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].name, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].transactionPin, accountRequests[requestCount].status) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].firstName, accountRequests[requestCount].lastName, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].transactionPin, accountRequests[requestCount].status) != EOF)
     {
         requestCount++;
     }
@@ -302,8 +304,11 @@ void requestAccountCreation()
     char confirmTransactionPin[6]; // For confirming the transaction PIN
 
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
-    printf("Enter Your Name: ");
-    scanf("%s", newRequest.name);
+    printf("Enter Your First Name: ");
+    scanf("%s", newRequest.firstName);
+
+    printf("Enter Your Last Name: ");
+    scanf("%s", newRequest.lastName);
 
     printf("Enter Your Mobile No: ");
     scanf("%s", newRequest.mobileNo);
@@ -374,8 +379,8 @@ void viewPendingRequests()
     {
         if (strcmp(accountRequests[i].status, "Pending") == 0)
         {
-            printf(" %d\t\t%s\t%s\t%s\t%s\n",
-                   accountRequests[i].requestID, accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
+            printf(" %d\t\t%s %s\t%s\t%s\t%s\n",
+                   accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
         }
     }
 }
@@ -391,7 +396,7 @@ void approveOrRejectRequest()
     {
         if (accountRequests[i].requestID == requestID && strcmp(accountRequests[i].status, "Pending") == 0)
         {
-            printf("%s\t%s\t%s\t%s\n", accountRequests[i].name, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
+            printf("%s\t%s %s\t%s\t%s\n", accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
             printf("1. Approve\n2. Reject\nEnter your choice: ");
             scanf("%d", &choice);
 
@@ -406,7 +411,8 @@ void approveOrRejectRequest()
 
                 struct Account newAccount;
                 newAccount.accountNumber = baseAccountNumber++; // Auto-generated account number
-                strcpy(newAccount.name, accountRequests[i].name);
+                strcpy(newAccount.firstName, accountRequests[i].firstName);
+                strcpy(newAccount.lastName, accountRequests[i].lastName);
                 strcpy(newAccount.mobileNo, accountRequests[i].mobileNo);
                 strcpy(newAccount.aadharNo, accountRequests[i].aadharNo);
                 strcpy(newAccount.panNo, accountRequests[i].panNo);
@@ -445,8 +451,8 @@ void displayAllAccounts()
     printf("Approved Accounts:\n\nAccount No\tName\tMobile No\tAadhar No\tPAN No\n");
     for (int i = 0; i < accountCount; i++)
     {
-        printf("XXXXXXXX%d\t%s\t%s\t%s\t%s\n",
-               accounts[i].accountNumber, accounts[i].name, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
+        printf("XXXXXXXX%d\t%s %s\t%s\t%s\t%s\n",
+               accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
     }
 }
 
@@ -541,7 +547,7 @@ int customerLogin()
                 printf("Error opening unfreeze request file!\n");
                 return 0;
             }
-            fprintf(file, "%d %s\n", accounts[index].accountNumber, accounts[index].name); // Store account number and name
+            fprintf(file, "%d %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].lastName); // Store account number and name
             fclose(file);
             printf("Your request to unfreeze your account has been submitted.\n");
             return 0;
@@ -688,8 +694,8 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         switch (choice)
         {
         case 1:
-            printf("Account Number: XXXXXXXX%d\nName: %s\nMobile No: %s\n",
-                   loggedInCustomer->accountNumber, loggedInCustomer->name, loggedInCustomer->mobileNo);
+            printf("Account Number: XXXXXXXX%d\nName: %s %s\nMobile No: %s\n",
+                   loggedInCustomer->accountNumber, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
             break;
         case 2:
             printf("Current Balance: %.2f\n", loggedInCustomer->balance);
@@ -1130,7 +1136,7 @@ void deleteAccount()
     // If account is found
     if (found != -1)
     {
-        printf("Account found: %s (Account No: XXXXXXXX%d)\n", accounts[found].name, accounts[found].accountNumber);
+        printf("Account found: %s %s (Account No: XXXXXXXX%d)\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
         printf("Are you sure you want to delete this account?\n");
         printf("1. Yes\n");
         printf("2. No\n");
@@ -1186,7 +1192,7 @@ void freezeOrUnfreezeAccount()
     if (found != -1)
     {
         // Check the current status of the account
-        printf("Account found: %s (Account No: XXXXXXXX%d)\n", accounts[found].name, accounts[found].accountNumber);
+        printf("Account found: %s %s (Account No: XXXXXXXX%d)\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
         printf("Current Status: %s\n", accounts[found].status);
         if (strcmp(accounts[found].status, "Active") == 0)
         {

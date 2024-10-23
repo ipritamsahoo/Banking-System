@@ -1,1 +1,3 @@
 5247 694 4690 Debit 1234 Active
+5248 695 4691 Credit 5678 Active
+5249 696 4692 Debit 6789 Active
