@@ -22,6 +22,8 @@ struct AccountRequest
     char password[50];
     char transactionPin[6];
     char status[10]; // "Pending", "Approved", "Rejected"
+    int securityQuestion;
+    char securityAnswer[100];
 };
 
 // Structure for active bank accounts
@@ -37,6 +39,8 @@ struct Account
     char transactionPin[6];
     float balance;
     char status[10]; // "Active", "Frozen"
+    int securityQuestion;
+    char securityAnswer[100];
 };
 
 // Structure for transactions
@@ -91,7 +95,7 @@ void loadAccountsFromFile();
 void loadRequestedAccountsFromFile();
 void loadTransactionsFromFile();
 void saveTransactionsToFile();
-int findAccountByMobile(char *mobileNo, char *password);
+int findAccountByPassword(char *password);
 void transferMoney(struct Account *loggedInCustomer);
 void requestCard(struct Account *loggedInCustomer);
 void viewPendingCardRequests();
@@ -108,6 +112,8 @@ void deleteAccount();
 void freezeOrUnfreezeAccount();
 void viewPendingUnfreezeRequests();
 void removeUnfreezeRequest(int accountNumber);
+int findAccountByMobileOnly(const char *mobileNo);
+int displaySecurityQuestion(int);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -121,7 +127,7 @@ void saveAccountsToFile()
 
     for (int i = 0; i < accountCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s %s %s %.2f\n", accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].status, accounts[i].balance);
+        fprintf(file, "%d %s %s %s %s %s %s %s %s %.2f %d %s\n", accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo, accounts[i].password, accounts[i].transactionPin, accounts[i].status, accounts[i].balance, accounts[i].securityQuestion, accounts[i].securityAnswer);
     }
 
     fclose(file);
@@ -139,7 +145,7 @@ void saveRequestedAccountsToFile()
 
     for (int i = 0; i < requestCount; i++)
     {
-        fprintf(file, "%d %s %s %s %s %s %s %s %s\n", accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].transactionPin, accountRequests[i].status);
+        fprintf(file, "%d %s %s %s %s %s %s %s %s %d %s\n", accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo, accountRequests[i].password, accountRequests[i].transactionPin, accountRequests[i].status, accountRequests[i].securityQuestion, accountRequests[i].securityAnswer);
     }
 
     fclose(file);
@@ -191,7 +197,7 @@ void loadAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s %s %s %f", &accounts[accountCount].accountNumber, accounts[accountCount].firstName, accounts[accountCount].lastName, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].status, &accounts[accountCount].balance) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s %s %f %d %s", &accounts[accountCount].accountNumber, accounts[accountCount].firstName, accounts[accountCount].lastName, accounts[accountCount].mobileNo, accounts[accountCount].aadharNo, accounts[accountCount].panNo, accounts[accountCount].password, accounts[accountCount].transactionPin, &accounts[accountCount].status, &accounts[accountCount].balance, &accounts[accountCount].securityQuestion, accounts[accountCount].securityAnswer) != EOF)
     {
         if (accounts[accountCount].accountNumber >= baseAccountNumber)
         {
@@ -213,7 +219,7 @@ void loadRequestedAccountsFromFile()
         return;
     }
 
-    while (fscanf(file, "%d %s %s %s %s %s %s %s %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].firstName, accountRequests[requestCount].lastName, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].transactionPin, accountRequests[requestCount].status) != EOF)
+    while (fscanf(file, "%d %s %s %s %s %s %s %s %s %d %s", &accountRequests[requestCount].requestID, accountRequests[requestCount].firstName, accountRequests[requestCount].lastName, accountRequests[requestCount].mobileNo, accountRequests[requestCount].aadharNo, accountRequests[requestCount].panNo, accountRequests[requestCount].password, accountRequests[requestCount].transactionPin, accountRequests[requestCount].status, &accountRequests[requestCount].securityQuestion, accountRequests[requestCount].securityAnswer) != EOF)
     {
         requestCount++;
     }
@@ -302,6 +308,7 @@ void requestAccountCreation()
     char confirmPassword[50];      // For confirming the password
     char transactionPin[6];        // For storing the transaction PIN
     char confirmTransactionPin[6]; // For confirming the transaction PIN
+    int securityQuestionChoice;    // Choice of security question
 
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
     printf("Enter Your First Name: ");
@@ -364,6 +371,34 @@ void requestAccountCreation()
         }
     }
 
+    // Security question section
+    printf("\nChoose a Security Question for Account Recovery:\n");
+    printf("1. What is your mother's maiden name?\n");
+    printf("2. What was the name of your first pet?\n");
+    printf("3. What is the name of the city where you were born?\n");
+    printf("Enter your choice: ");
+    scanf("%d", &securityQuestionChoice);
+
+    switch (securityQuestionChoice)
+    {
+    case 1:
+        newRequest.securityQuestion = 1;
+        break;
+    case 2:
+        newRequest.securityQuestion = 2;
+        break;
+    case 3:
+        newRequest.securityQuestion = 3;
+        break;
+    default:
+        printf("Invalid choice! Please select a valid option.\n");
+        return; // Exit if invalid option is selected
+    }
+
+    // Prompt for the answer to the selected security question
+    printf("Enter the answer to your security question: ");
+    scanf("%s", newRequest.securityAnswer);
+
     strcpy(newRequest.status, "Pending"); // Initial status is pending
 
     // Save the request
@@ -418,8 +453,11 @@ void approveOrRejectRequest()
                 strcpy(newAccount.panNo, accountRequests[i].panNo);
                 strcpy(newAccount.password, accountRequests[i].password);
                 strcpy(newAccount.transactionPin, accountRequests[i].transactionPin);
+                strcpy(newAccount.securityAnswer, accountRequests[i].securityAnswer);
                 newAccount.balance = 1000.0; // Initial balance
                 strcpy(newAccount.status, "Active");
+
+                newAccount.securityQuestion = accountRequests[i].securityQuestion;
 
                 // Add new account to the system
                 accounts[accountCount++] = newAccount;
@@ -520,63 +558,163 @@ int customerLogin()
 
     printf("Enter Your Mobile Number: ");
     scanf("%s", mobileNo);
-    printf("Enter Your Password: ");
-    scanf("%s", password);
 
-    int index = findAccountByMobile(mobileNo, password);
+    int index = findAccountByMobileOnly(mobileNo); // Find by mobile number only
     if (index == -1)
     {
-        printf("Invalid mobile number or password! Try again.\n");
+        printf("Account with this mobile number not found!\n");
         return 0;
     }
-    else if (strcmp(accounts[index].status, "Frozen") == 0)
+
+    while (1)
     {
-        printf("Your account is currently frozen. Please contact the admin.\n");
+        printf("Enter Your Password: ");
+        scanf("%s", password);
 
-        // Ask if they want to request to unfreeze the account
-        int choice;
-        printf("Do you want to request to unfreeze your account?\n1. Yes\n2. No\nEnter your choice: ");
-        scanf("%d", &choice);
-
-        if (choice == 1)
+        index = findAccountByPassword(password);
+        if (index == -1)
         {
-            // Send request to unfreeze
-            FILE *file = fopen("unfreezeRequests.txt", "a");
-            if (file == NULL)
+            printf("Invalid password!\n");
+
+            // Provide forgot password option after failed login
+            int choice;
+            printf("1. Forgot Password\n2. Try Again\nEnter your choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1)
             {
-                printf("Error opening unfreeze request file!\n");
+                // Forgot password flow
+                // Ask the security question
+                index = findAccountByMobileOnly(mobileNo);
+                displaySecurityQuestion(accounts[index].securityQuestion);
+                char answer[100];
+                printf("Enter Your Answer: ");
+                scanf("%s", answer);
+
+                if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                {
+                    // Allow resetting the password
+                    char newPassword[50], confirmPassword[50];
+                    while (1)
+                    {
+                        printf("Enter a New Password: ");
+                        scanf("%s", newPassword);
+                        printf("Confirm Your New Password: ");
+                        scanf("%s", confirmPassword);
+
+                        if (strcmp(newPassword, confirmPassword) == 0)
+                        {
+                            strcpy(accounts[index].password, newPassword); // Update password
+                            strcpy(accountRequests[index].password, newPassword);
+                            printf("Password reset successful! You can now log in with your new password.\n");
+                            return 1;
+                        }
+                        else
+                        {
+                            printf("Passwords do not match! Please try again.\n");
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Incorrect answer to the security question. Password reset failed.\n");
+                    return 0;
+                }
+            }
+            else if (choice == 2)
+            {
+                // Allow user to try again
+                continue;
+            }
+            else
+            {
+                printf("Invalid choice! Please try again.\n");
+            }
+        }
+        else if (strcmp(accounts[index].status, "Frozen") == 0)
+        {
+            printf("Your account is currently frozen. Please contact the admin.\n");
+            int choice;
+            // Ask if they want to request to unfreeze the account
+            printf("Do you want to request to unfreeze your account?\n1. Yes\n2. No\nEnter your choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1)
+            {
+                // Send request to unfreeze
+                FILE *file = fopen("unfreezeRequests.txt", "a");
+                if (file == NULL)
+                {
+                    printf("Error opening unfreeze request file!\n");
+                    return 0;
+                }
+                fprintf(file, "%d %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].lastName); // Store account number and name
+                fclose(file);
+                printf("Your request to unfreeze your account has been submitted.\n");
                 return 0;
             }
-            fprintf(file, "%d %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].lastName); // Store account number and name
-            fclose(file);
-            printf("Your request to unfreeze your account has been submitted.\n");
-            return 0;
+            else
+            {
+                printf("No request submitted.\n");
+                return 0;
+            }
         }
         else
         {
-            printf("No request submitted.\n");
-            return 0;
+            printf("Login successful!\n");
+            customerPostLoginMenu(&accounts[index]);
+            return 1;
         }
     }
-    else
+
+    return 0;
+}
+
+int displaySecurityQuestion(int choice)
+{
+    int ch = choice;
+    printf("Security Question:\n");
+    switch (ch)
     {
-        printf("Login successful!\n");
-        customerPostLoginMenu(&accounts[index]);
-        return 1;
+    case 1:
+        printf("What is your mother's maiden name?\n");
+        break;
+    case 2:
+        printf("What was the name of your first pet?\n");
+        break;
+    case 3:
+        printf("What is the name of the city where you were born?\n");
+        break;
+    default:
+        break;
     }
+    return 0;
 }
 
 // Function to find an account by mobile number and password
-int findAccountByMobile(char *mobileNo, char *password)
+int findAccountByPassword(char *password)
 {
     for (int i = 0; i < accountCount; i++)
     {
-        if (strcmp(accounts[i].mobileNo, mobileNo) == 0 && strcmp(accounts[i].password, password) == 0)
+        if (strcmp(accounts[i].password, password) == 0)
         {
             return i;
         }
     }
     return -1;
+}
+
+// Function to find an account by mobile number only
+int findAccountByMobileOnly(const char *mobileNo)
+{
+    for (int i = 0; i < accountCount; i++)
+    {
+        if (strcmp(accounts[i].mobileNo, mobileNo) == 0)
+        {
+            return i; // Return the index if a match is found
+        }
+    }
+    return -1; // Return -1 if no match is found
 }
 
 // Function to transfer money from one account to another
@@ -624,13 +762,81 @@ void transferMoney(struct Account *loggedInCustomer)
     }
 
     // Verify transaction PIN
-    printf("Enter your 4-digit transaction PIN: ");
-    scanf("%s", enteredPin);
-
-    if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
+    while (1)
     {
-        printf("Invalid transaction PIN!\n");
-        return;
+        printf("Enter your 4-digit transaction PIN: ");
+        scanf("%s", enteredPin);
+
+        if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
+        {
+            printf("Invalid transaction PIN!\n");
+            // return;
+
+            // Provide forgot PIN option after failed transaction
+            int choice;
+            printf("1. Forgot Transaction PIN\n2. Try Again\nEnter your choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1)
+            {
+                // Forgot PIN flow
+                // Ask the security question
+                int index = findAccountByMobileOnly(loggedInCustomer->mobileNo);
+                if (index == -1)
+                {
+                    printf("Account not found for mobile number.\n");
+                    return;
+                }
+
+                // Display the security question
+                displaySecurityQuestion(accounts[index].securityQuestion);
+                char answer[100];
+                printf("Enter Your Answer: ");
+                scanf("%s", answer);
+
+                // Check the answer
+                if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                {
+                    // Allow resetting the PIN
+                    char newPIN[10], confirmPIN[10];
+                    while (1)
+                    {
+                        printf("Enter a New 4-digit PIN: ");
+                        scanf("%s", newPIN);
+                        printf("Confirm Your New PIN: ");
+                        scanf("%s", confirmPIN);
+
+                        if (strcmp(newPIN, confirmPIN) == 0)
+                        {
+                            strcpy(accounts[index].transactionPin, newPIN); // Update transaction PIN
+                            printf("PIN reset successful!\n");
+                            break;
+                        }
+                        else
+                        {
+                            printf("PINs do not match! Please try again.\n");
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Incorrect answer to the security question. PIN reset failed.\n");
+                    return;
+                }
+            }
+            else if (choice == 2)
+            {
+                continue; // Allow user to retry PIN entry
+            }
+            else
+            {
+                printf("Invalid choice! Please try again.\n");
+            }
+        }
+        else
+        {
+            break; // PIN is correct
+        }
     }
 
     // Perform transfer
@@ -1152,11 +1358,18 @@ void deleteAccount()
             }
             accountCount--; // Reduce the total account count
 
+            for (int i = found; i < requestCount - 1; i++)
+            {
+                accountRequests[i] = accountRequests[i + 1];
+            }
+            requestCount--;
+
             // Save the updated accounts to file
             saveAccountsToFile();
+            saveRequestedAccountsToFile();
             printf("Account successfully deleted.\n");
         }
-        else if (confirmChoice == '2') // User chose "No"
+        else if (confirmChoice == '2') // User choose "No"
         {
             printf("Account deletion cancelled.\n");
         }
