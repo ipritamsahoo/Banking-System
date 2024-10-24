@@ -114,6 +114,7 @@ void viewPendingUnfreezeRequests();
 void removeUnfreezeRequest(int accountNumber);
 int findAccountByMobileOnly(const char *mobileNo);
 int displaySecurityQuestion(int);
+void updateProfile(struct Account *loggedInCustomer);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -881,6 +882,50 @@ void viewTransactionHistory(struct Account *loggedInCustomer)
     printf("--------------------------------------------------------------------\n");
 }
 
+// Function to update customer profile
+void updateProfile(struct Account *loggedInCustomer)
+{
+    int choice;
+    printf("\nUpdate Your Profile:\n");
+    printf("1. Update Name\n");
+    printf("2. Update Mobile Number\n");
+    printf("3. Update Aadhar Number\n");
+    printf("4. Cancel\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice)
+    {
+    case 1:
+        printf("Enter New First Name: ");
+        scanf("%s", loggedInCustomer->firstName);
+        printf("Enter New Last Name: ");
+        scanf("%s", loggedInCustomer->lastName);
+        printf("Name updated successfully!\n");
+        break;
+    case 2:
+        printf("Enter New Mobile Number: ");
+        scanf("%s", loggedInCustomer->mobileNo);
+        printf("Mobile Number updated successfully!\n");
+        break;
+    case 3:
+        printf("Enter New Aadhar Number: ");
+        scanf("%s", loggedInCustomer->aadharNo);
+        printf("Mobile Number updated successfully!\n");
+        break;
+    case 4:
+        printf("Profile update canceled.\n");
+        return;
+    default:
+        printf("Invalid choice! Please try again.\n");
+        break;
+    }
+
+    // After updating, save the updated account details to file
+    saveAccountsToFile();
+    saveRequestedAccountsToFile();
+}
+
 // Function for post-login customer menu
 void customerPostLoginMenu(struct Account *loggedInCustomer)
 {
@@ -893,7 +938,8 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         printf("3. Money Transfer\n");
         printf("4. View Transactions\n");
         printf("5. My Cards\n");
-        printf("6. Logout\n");
+        printf("6. Update Profile\n");
+        printf("7. Logout\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -901,7 +947,7 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         {
         case 1:
             printf("Account Number: XXXXXXXX%d\nName: %s %s\nMobile No: %s\n",
-                   loggedInCustomer->accountNumber, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
+                   loggedInCustomer->accountNumber % 10000, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
             break;
         case 2:
             printf("Current Balance: %.2f\n", loggedInCustomer->balance);
@@ -916,6 +962,9 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
             customerCardManagement(loggedInCustomer);
             break;
         case 6:
+            updateProfile(loggedInCustomer);
+            break;
+        case 7:
             printf("Logging out...\n");
             return;
         default:
@@ -923,8 +972,8 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         }
 
         printf("\nPress enter to return to the previous menu...");
-        getchar();
-        getchar();
+        getchar(); // To capture the newline after input
+        getchar(); // To wait for the user to press enter
     }
 }
 
@@ -935,7 +984,7 @@ void customerMenu()
     while (1)
     {
         printf("\nYour Menu:\n");
-        printf("1. Request Account Creation\n");
+        printf("1. Sign Up (Request Account Creation)\n");
         printf("2. Login\n");
         printf("3. Go To Home\n");
         printf("Enter your choice: ");
