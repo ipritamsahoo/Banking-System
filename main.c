@@ -4,11 +4,12 @@
 
 #define MAX_ACCOUNTS 100
 #define MAX_REQUESTS 100
+#define MAX_TITLE_LENGTH 100
+#define MAX_ADMINS 10
 #define FILENAME "accounts.txt"
 #define FILENAME_1 "accountRequests.txt"
 #define FILENAME_CARDS "cards.txt"
 #define FILENAME_REQUESTS "cardRequests.txt"
-#define ADMIN_PASSWORD "admin123" // Admin password
 
 // Structure for account creation requests
 struct AccountRequest
@@ -71,6 +72,12 @@ struct Card
     char cardStatus[10]; // "Active", "Blocked"
 };
 
+typedef struct
+{
+    char username[MAX_TITLE_LENGTH];
+    char password[MAX_TITLE_LENGTH];
+} Admin;
+
 // Global lists for requests, approved accounts, transactions, card requests and approved cards
 struct AccountRequest accountRequests[MAX_REQUESTS];
 struct Account accounts[MAX_ACCOUNTS];
@@ -88,6 +95,7 @@ int cardCount = 0;
 
 // Function prototypes
 void customerMenu();
+void adminMenu();
 void customerPostLoginMenu(struct Account *loggedInCustomer);
 void saveAccountsToFile();
 void saveRequestedAccountsToFile();
@@ -115,6 +123,7 @@ void removeUnfreezeRequest(int accountNumber);
 int findAccountByMobileOnly(const char *mobileNo);
 int displaySecurityQuestion(int);
 void updateProfile(struct Account *loggedInCustomer);
+int readCredentials(Admin admins[], int maxAdmins);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -302,6 +311,26 @@ void saveCards()
     fclose(file);
 }
 
+// Function to read admin credentials from a file
+int readCredentials(Admin admins[], int maxAdmins)
+{
+    FILE *file = fopen("config.txt", "r");
+    if (file == NULL)
+    {
+        printf("Error opening config file.\n");
+        return 0;
+    }
+
+    int count = 0;
+    while (count < maxAdmins && fscanf(file, "HORIBOL=%s\nBOLOHORI=%s\n", admins[count].username, admins[count].password) == 2)
+    {
+        count++;
+    }
+
+    fclose(file);
+    return count; // Return the number of admins read
+}
+
 // Function to request account creation (customer side)
 void requestAccountCreation()
 {
@@ -407,17 +436,25 @@ void requestAccountCreation()
     printf("Account Creation Request Submitted!\n\n");
 }
 
-// Function for admin to view all pending requests
 void viewPendingRequests()
 {
+    int foundPending = 0; // Flag to check if any pending requests are found
+
     printf("Pending Account Creation Requests:\nRequest ID\tName\tMobile No\tAadhar No\tPAN No\n");
+
     for (int i = 0; i < requestCount; i++)
     {
         if (strcmp(accountRequests[i].status, "Pending") == 0)
         {
+            foundPending = 1; // Set flag if a pending request is found
             printf(" %d\t\t%s %s\t%s\t%s\t%s\n",
                    accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
         }
+    }
+
+    if (!foundPending)
+    {
+        printf("No pending requests found.\n"); // Message if no pending requests are found
     }
 }
 
@@ -947,7 +984,7 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         {
         case 1:
             printf("Account Number: XXXXXXXX%d\nName: %s %s\nMobile No: %s\n",
-                   loggedInCustomer->accountNumber % 10000, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
+                   loggedInCustomer->accountNumber, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
             break;
         case 2:
             printf("Current Balance: %.2f\n", loggedInCustomer->balance);
@@ -1172,6 +1209,7 @@ void customerCardManagement(struct Account *loggedInCustomer)
                         {
                             printf("Card Details:\n");
                             printf("Card Number: XXXX XXXX %d\n", cards[i].cardNumber);
+                            printf("Card Expiry Date: 12/31");
                             printf("CVV: %d\n", cards[i].cvv);
                             printf("Card Type: %s\n", cards[i].cardType);
                             printf("Status: %s\n", cards[i].cardStatus);
@@ -1553,7 +1591,6 @@ void removeUnfreezeRequest(int accountNumber)
     rename("temp.txt", "unfreezeRequests.txt");
 }
 
-// Main function with role selection
 int main()
 {
     loadAccountsFromFile();          // Load existing accounts
@@ -1562,9 +1599,12 @@ int main()
     loadCardRequests();
     loadCards();
 
+    Admin admins[MAX_ADMINS];
+    int numAdmins = readCredentials(admins, MAX_ADMINS);
+
     int userType;
-    while (1) // This loop ensures that after exiting a menu, the user returns to the role selection.
-    {
+    while (1)
+    { // Loop for role selection
         printf("Welcome to the PSD Bank!\n");
         printf("Select your role:\n1. Customer\n2. Admin\n3. Exit\nEnter your choice: ");
         scanf("%d", &userType);
@@ -1576,24 +1616,38 @@ int main()
         }
         else if (userType == 2)
         {
-            // Admin Menu with password protection
-            char password[20];
+            // Admin Menu with username and password
+            char username[MAX_TITLE_LENGTH];
+            char password[MAX_TITLE_LENGTH];
+
+            printf("Enter Admin Username: ");
+            scanf("%s", username);
             printf("Enter Admin Password: ");
             scanf("%s", password);
 
-            if (strcmp(password, ADMIN_PASSWORD) == 0)
+            int loginSuccess = 0;
+            for (int i = 0; i < numAdmins; i++)
+            {
+                if (strcmp(username, admins[i].username) == 0 && strcmp(password, admins[i].password) == 0)
+                {
+                    loginSuccess = 1;
+                    break; // Exit loop on successful login
+                }
+            }
+
+            if (loginSuccess)
             {
                 adminMenu();
             }
             else
             {
-                printf("Incorrect password! Access denied.\n");
+                printf("Incorrect username or password! Access denied.\n");
             }
         }
         else if (userType == 3)
         {
             printf("Exiting the system. Goodbye!\n");
-            break; // This breaks the loop and exits the program when the user selects "Exit".
+            break; // Exit the program
         }
         else
         {
