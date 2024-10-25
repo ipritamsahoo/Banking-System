@@ -1,6 +1,6 @@
-HORIBOL=pritam
-BOLOHORI=pritam@123
-HORIBOL=suman
-BOLOHORI=suman@123
-HORIBOL=deba
-BOLOHORI=deba@123
+ABCDE=pritam
+EDCBA=pritam@123
+ABCDE=suman
+EDCBA=suman@123
+ABCDE=deba
+EDCBA=deba@123

@@ -103,6 +103,8 @@ void loadAccountsFromFile();
 void loadRequestedAccountsFromFile();
 void loadTransactionsFromFile();
 void saveTransactionsToFile();
+int viewPendingRequests();
+int displayAllAccounts();
 int findAccountByPassword(char *password);
 void transferMoney(struct Account *loggedInCustomer);
 void requestCard(struct Account *loggedInCustomer);
@@ -322,7 +324,7 @@ int readCredentials(Admin admins[], int maxAdmins)
     }
 
     int count = 0;
-    while (count < maxAdmins && fscanf(file, "HORIBOL=%s\nBOLOHORI=%s\n", admins[count].username, admins[count].password) == 2)
+    while (count < maxAdmins && fscanf(file, "ABCDE=%s\nEDCBA=%s\n", admins[count].username, admins[count].password) == 2)
     {
         count++;
     }
@@ -406,6 +408,7 @@ void requestAccountCreation()
     printf("1. What is your mother's maiden name?\n");
     printf("2. What was the name of your first pet?\n");
     printf("3. What is the name of the city where you were born?\n");
+    printf("4. Who is your favorit singer?\n");
     printf("Enter your choice: ");
     scanf("%d", &securityQuestionChoice);
 
@@ -419,6 +422,9 @@ void requestAccountCreation()
         break;
     case 3:
         newRequest.securityQuestion = 3;
+        break;
+    case 4:
+        newRequest.securityQuestion = 4;
         break;
     default:
         printf("Invalid choice! Please select a valid option.\n");
@@ -436,9 +442,24 @@ void requestAccountCreation()
     printf("Account Creation Request Submitted!\n\n");
 }
 
-void viewPendingRequests()
+// Function to dispaly all Account Requests
+int viewPendingRequests()
 {
     int foundPending = 0; // Flag to check if any pending requests are found
+
+    for (int i = 0; i < requestCount; i++)
+    {
+        if (strcmp(accountRequests[i].status, "Pending") == 0)
+        {
+            foundPending = 1; // Set flag if a pending request is found
+        }
+    }
+
+    if (!foundPending)
+    {
+        printf("No pending requests found.\n"); // Message if no pending requests are found
+        return 0;
+    }
 
     printf("Pending Account Creation Requests:\nRequest ID\tName\tMobile No\tAadhar No\tPAN No\n");
 
@@ -446,16 +467,11 @@ void viewPendingRequests()
     {
         if (strcmp(accountRequests[i].status, "Pending") == 0)
         {
-            foundPending = 1; // Set flag if a pending request is found
             printf(" %d\t\t%s %s\t%s\t%s\t%s\n",
                    accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
         }
     }
-
-    if (!foundPending)
-    {
-        printf("No pending requests found.\n"); // Message if no pending requests are found
-    }
+    return 0;
 }
 
 // Function for admin to approve or reject requests
@@ -522,14 +538,27 @@ void approveOrRejectRequest()
 }
 
 // Function to display all approved accounts
-void displayAllAccounts()
+int displayAllAccounts()
 {
+    int foundAccount = 0;
+
+    for (int i = 0; i < accountCount; i++)
+    {
+        foundAccount = 1;
+    }
+
+    if (!foundAccount)
+    {
+        printf("No Accounts found in your system!");
+        return 0;
+    }
     printf("Approved Accounts:\n\nAccount No\tName\tMobile No\tAadhar No\tPAN No\n");
     for (int i = 0; i < accountCount; i++)
     {
         printf("XXXXXXXX%d\t%s %s\t%s\t%s\t%s\n",
                accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
     }
+    return 0;
 }
 
 // Function for admin menu
@@ -722,6 +751,9 @@ int displaySecurityQuestion(int choice)
         break;
     case 3:
         printf("What is the name of the city where you were born?\n");
+        break;
+    case 4:
+        printf("Who is your favorit singer?\n");
         break;
     default:
         break;
@@ -1021,8 +1053,8 @@ void customerMenu()
     while (1)
     {
         printf("\nYour Menu:\n");
-        printf("1. Sign Up (Request Account Creation)\n");
-        printf("2. Login\n");
+        printf("1. Login\n");
+        printf("2. Sign Up (Request Account Creation)\n");
         printf("3. Go To Home\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -1030,13 +1062,13 @@ void customerMenu()
         switch (choice)
         {
         case 1:
-            requestAccountCreation();
-            break;
-        case 2:
             if (customerLogin())
             {
                 // Successful login, proceed to post-login menu
             }
+            break;
+        case 2:
+            requestAccountCreation();
             break;
         case 3:
             // Return to the main menu (exit customer menu loop)
@@ -1083,6 +1115,17 @@ void requestCard(struct Account *loggedInCustomer)
 // Function for admin to view all pending card requests
 void viewPendingCardRequests()
 {
+    int foundCardRequest = 0;
+
+    for (int i = 0; i < cardRequestCount; i++)
+    {
+        foundCardRequest = 1;
+    }
+    if (!foundCardRequest)
+    {
+        printf("No card request found!");
+        return;
+    }
     printf("Pending Card Requests:\nRequest ID\tAccount Number\tCard Type\n");
     for (int i = 0; i < cardRequestCount; i++)
     {
@@ -1092,6 +1135,7 @@ void viewPendingCardRequests()
                    cardRequests[i].requestID, cardRequests[i].accountNumber, cardRequests[i].cardType);
         }
     }
+    return;
 }
 
 // Function for admin to approve or reject card requests
