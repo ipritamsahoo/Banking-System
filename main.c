@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define MAX_ACCOUNTS 100
 #define MAX_REQUESTS 100
@@ -10,6 +11,15 @@
 #define FILENAME_1 "accountRequests.txt"
 #define FILENAME_CARDS "cards.txt"
 #define FILENAME_REQUESTS "cardRequests.txt"
+
+// Define color codes
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define RESET   "\x1b[0m"
 
 // Structure for account creation requests
 struct AccountRequest
@@ -126,6 +136,9 @@ int findAccountByMobileOnly(const char *mobileNo);
 int displaySecurityQuestion(int);
 void updateProfile(struct Account *loggedInCustomer);
 int readCredentials(Admin admins[], int maxAdmins);
+int isValidPANFormat(char *pan);
+void toUpperCase(char *str);
+void clearScreen();
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -342,74 +355,127 @@ void requestAccountCreation()
     char confirmTransactionPin[6]; // For confirming the transaction PIN
     int securityQuestionChoice;    // Choice of security question
 
+    printf("\n\033[1;34m===== Application For Account Opening =====\033[0m\n\n");
+
     newRequest.requestID = requestCount + 1; // Assigning unique request ID
-    printf("Enter Your First Name: ");
+    printf("\033[1;36mEnter Your First Name: \033[0m");
     scanf("%s", newRequest.firstName);
 
-    printf("Enter Your Last Name: ");
+    printf("\033[1;36mEnter Your Last Name: \033[0m");
     scanf("%s", newRequest.lastName);
 
-    printf("Enter Your Mobile No: ");
-    scanf("%s", newRequest.mobileNo);
+    while (1)
+    {
+        printf("\033[1;36mEnter Your Mobile No : \033[0m");
+        scanf("%s", newRequest.mobileNo);
 
-    printf("Enter Your Aadhar No: ");
-    scanf("%s", newRequest.aadharNo);
+        if (strlen(newRequest.mobileNo) == 10 && strspn(newRequest.mobileNo, "0123456789") == 10)
+            break;
 
-    printf("Enter Your PAN No: ");
-    scanf("%s", newRequest.panNo);
+        printf("\033[1;31mInvalid Mobile Number! Please enter exactly 10 digits.\033[0m\n");
+    }
+
+    while (1)
+    {
+        printf("\033[1;36mEnter Your Aadhar No : \033[0m");
+        scanf("%s", newRequest.aadharNo);
+
+        if (strlen(newRequest.aadharNo) == 12 && strspn(newRequest.aadharNo, "0123456789") == 12)
+        {
+            printf("\033[1;32mAadhar Number is valid and confirmed!\033[0m\n");
+            break;
+        }
+        else
+        {
+            printf("\033[1;31mInvalid Aadhar Number! Please enter exactly 12 digits.\033[0m\n");
+        }
+    }
+
+    while (1)
+    {
+        printf("\033[1;36mEnter Your PAN No : \033[0m");
+        scanf("%s", newRequest.panNo);
+
+        // Convert input to uppercase
+        toUpperCase(newRequest.panNo);
+
+        // Check if PAN format is valid
+        if (isValidPANFormat(newRequest.panNo))
+        {
+            printf("\033[1;32mPAN Number is valid and confirmed!\033[0m\n");
+            break;
+        }
+        else
+        {
+            printf("\033[1;31mInvalid PAN Number! Please follow the format: 5 letters, 4 digits, 1 letter.\033[0m\n");
+        }
+    }
 
     // Password confirmation loop
     while (1)
     {
-        printf("Set a Password for Your Account: ");
+        printf("\033[1;36mSet a Password for Your Account: \033[0m");
         scanf("%s", newRequest.password);
 
-        printf("Confirm Your Password: ");
+        printf("\033[1;36mConfirm Your Password: \033[0m");
         scanf("%s", confirmPassword);
 
         if (strcmp(newRequest.password, confirmPassword) == 0)
         {
+            printf("\033[1;32mPassword confirmed!\033[0m\n");
             break; // Passwords match, proceed
         }
         else
         {
-            printf("Passwords do not match! Please retype your password.\n");
+            printf("\033[1;31mPasswords do not match! Please retype your password.\033[0m\n");
         }
     }
 
     // Transaction PIN confirmation loop
     while (1)
     {
-        printf("Set a 4-digit Transaction PIN for Your Account: ");
+        printf("\033[1;36mSet a 4-digit Transaction PIN for Your Account: \033[0m");
         scanf("%s", transactionPin);
 
         if (strlen(transactionPin) != 4)
         {
-            printf("Invalid PIN! Please enter a 4-digit PIN.\n");
+            printf("\033[1;31mInvalid PIN! Please enter a 4-digit PIN.\033[0m\n");
             continue;
         }
 
-        printf("Confirm Your Transaction PIN: ");
+        printf("\033[1;36mConfirm Your Transaction PIN: \033[0m");
         scanf("%s", confirmTransactionPin);
 
         if (strcmp(transactionPin, confirmTransactionPin) == 0)
         {
             strcpy(newRequest.transactionPin, transactionPin); // Store the confirmed PIN
-            break;                                             // PINs match, proceed
+            printf("\033[1;32mTransaction PIN confirmed!\033[0m\n");
+            break; // PINs match, proceed
         }
         else
         {
-            printf("Transaction PINs do not match! Please retype your PIN.\n");
+            printf("\033[1;31mTransaction PINs do not match! Please retype your PIN.\033[0m\n");
         }
     }
 
     // Security question section
-    printf("\nChoose a Security Question for Account Recovery:\n");
-    printf("1. What is your mother's maiden name?\n");
-    printf("2. What was the name of your first pet?\n");
-    printf("3. What is the name of the city where you were born?\n");
-    printf("4. Who is your favorit singer?\n");
-    printf("Enter your choice: ");
+    printf("\n\033[1;36m--------------------------------------------\033[0m\n");
+    printf("\033[1;36m|        Account Recovery Setup            |\033[0m\n");
+    printf("\033[1;36m--------------------------------------------\033[0m\n");
+
+    printf("\n\033[1mPlease select a security question to help recover your account.\033[0m\n");
+    printf("\033[1;32mMake sure to choose something memorable.\033[0m\n\n");
+    printf("\033[1;36m===========================================================\033[0m\n");
+    printf("\033[1;33m1. What was the name of your first pet?\033[0m\n");
+    printf("\033[1;33m2. What is the name of the city where you were born?\033[0m\n");
+    printf("\033[1;33m3. Who is your favorit singer?\033[0m\n");
+    printf("\033[1;33m4. What color do you like the most?\033[0m\n");
+    printf("\033[1;33m5. What is your favorite book?\033[0m\n");
+    printf("\033[1;33m6. Which teacher did you like the most at school?\033[0m\n");
+    printf("\033[1;33m7. What is your favorite sport?\033[0m\n");
+    printf("\033[1;33m8. Who is your favorite actor?\033[0m\n");
+    printf("\033[1;36m===========================================================\033[0m\n");
+    printf("\n\033[1;34mEnter the number of your choice: \033[0m");
     scanf("%d", &securityQuestionChoice);
 
     switch (securityQuestionChoice)
@@ -426,20 +492,83 @@ void requestAccountCreation()
     case 4:
         newRequest.securityQuestion = 4;
         break;
+    case 5:
+        newRequest.securityQuestion = 5;
+        break;
+    case 6:
+        newRequest.securityQuestion = 6;
+        break;
+    case 7:
+        newRequest.securityQuestion = 7;
+        break;
+    case 8:
+        newRequest.securityQuestion = 8;
+        break;
     default:
-        printf("Invalid choice! Please select a valid option.\n");
+        printf("\n\033[1;31mInvalid choice!\033[0m Please select a valid option from the list.\n");
         return; // Exit if invalid option is selected
     }
 
     // Prompt for the answer to the selected security question
-    printf("Enter the answer to your security question: ");
+    printf("\n\033[1;32mGreat choice!\033[0m ");
+    printf("Now, please enter your answer:\033[1m");
     scanf("%s", newRequest.securityAnswer);
+    printf("\033[0m\nThank you! Your answer has been securely saved.\n");
+    printf("\033[1;36m---------------------------------------------\033[0m\n");
 
     strcpy(newRequest.status, "Pending"); // Initial status is pending
 
     // Save the request
     accountRequests[requestCount++] = newRequest;
-    printf("Account Creation Request Submitted!\n\n");
+    // Success message
+    printf("\n\033[1;32mAccount Creation Request Submitted Successfully!\033[0m\n");
+}
+
+// Function to convert a string to uppercase
+void toUpperCase(char *str)
+{
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] >= 'a' && str[i] <= 'z')
+        {
+            str[i] = str[i] - 'a' + 'A';
+        }
+    }
+}
+
+int isValidPANFormat(char *pan)
+{
+    // Check the length of PAN number
+    if (strlen(pan) != 10)
+    {
+        return 0;
+    }
+
+    // Check first 5 characters are letters
+    for (int i = 0; i < 5; i++)
+    {
+        if (pan[i] < 'A' || pan[i] > 'Z')
+        {
+            return 0;
+        }
+    }
+
+    // Check next 4 characters are digits
+    for (int i = 5; i < 9; i++)
+    {
+        if (pan[i] < '0' || pan[i] > '9')
+        {
+            return 0;
+        }
+    }
+
+    // Check last character is a letter
+    if (pan[9] < 'A' || pan[9] > 'Z')
+    {
+        return 0;
+    }
+
+    return 1;
 }
 
 // Function to dispaly all Account Requests
@@ -457,18 +586,23 @@ int viewPendingRequests()
 
     if (!foundPending)
     {
-        printf("No pending requests found.\n"); // Message if no pending requests are found
+        printf("\033[1;31mNo pending account opening requests found!\033[0m\n"); // Message if no pending requests are found
         return 0;
     }
 
-    printf("Pending Account Creation Requests:\nRequest ID\tName\tMobile No\tAadhar No\tPAN No\n");
+    printf("\n\033[1;34m========================= Pending Account Opening Requests =========================\033[0m\n\n");
+
+    // Table headers in cyan
+    printf("\033[1;36m%-20s %-20s %-15s %-15s %-15s\033[0m\n", "Request ID", "Name", "Mobile No", "Aadhar No", "PAN No");
+
+    printf("--------------------------------------------------------------------------------------\n");
 
     for (int i = 0; i < requestCount; i++)
     {
         if (strcmp(accountRequests[i].status, "Pending") == 0)
         {
-            printf(" %d\t\t%s %s\t%s\t%s\t%s\n",
-                   accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
+            printf(" %-15d%-2s %-18s%-15s%-15s%-15s\n", accountRequests[i].requestID, accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
+            printf("--------------------------------------------------------------------------------------\n");
         }
     }
     return 0;
@@ -478,15 +612,16 @@ int viewPendingRequests()
 void approveOrRejectRequest()
 {
     int requestID, choice;
+    printf("\n\033[1;34m=== Approve/Reject Account Request ===\033[0m\n");
     printf("Enter Request ID to Approve/Reject: ");
     scanf("%d", &requestID);
-    printf("Request Details:\nName\tMobile No\tAadhar No\tPAN No\n");
+
     for (int i = 0; i < requestCount; i++)
     {
         if (accountRequests[i].requestID == requestID && strcmp(accountRequests[i].status, "Pending") == 0)
         {
-            printf("%s\t%s %s\t%s\t%s\n", accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
-            printf("1. Approve\n2. Reject\nEnter your choice: ");
+            printf("\033[1;36mName:\033[0m %s %s\n\033[1;36mMobile Number:\033[0m %s\n\033[1;36mAadhar Number:\033[0m %s\n\033[1;36mPAN Number:\033[0m %s\n", accountRequests[i].firstName, accountRequests[i].lastName, accountRequests[i].mobileNo, accountRequests[i].aadharNo, accountRequests[i].panNo);
+            printf("\n1. Approve\n2. Reject\nEnter your choice: ");
             scanf("%d", &choice);
 
             if (choice == 1)
@@ -494,7 +629,7 @@ void approveOrRejectRequest()
                 // Approve the request
                 if (accountCount >= MAX_ACCOUNTS)
                 {
-                    printf("Maximum account limit reached!\n");
+                    printf("\033[1;31mError: Maximum account limit reached!\033[0m\n");
                     return;
                 }
 
@@ -515,26 +650,28 @@ void approveOrRejectRequest()
 
                 // Add new account to the system
                 accounts[accountCount++] = newAccount;
+                strcpy(accountRequests[i].status, "Approved"); // Update request status
 
                 // Save accounts to file
                 saveAccountsToFile();
+                saveRequestedAccountsToFile();
 
-                strcpy(accountRequests[i].status, "Approved"); // Update request status
-                printf("Account Request Approved\n\n");
+                printf("\033[1;32mSuccess: Account Request Approved!\033[0m\n\n");
             }
             else if (choice == 2)
             {
                 strcpy(accountRequests[i].status, "Rejected"); // Update request status
-                printf("Account Request Rejected!\n\n");
+                printf("\033[1;31mAccount Request Rejected!\033[0m\n\n");
             }
             else
             {
-                printf("Invalid choice!\n");
+                printf("\033[1;31mInvalid choice! Please enter 1 or 2.\033[0m\n\n");
             }
             return;
         }
     }
-    printf("Request ID not found or already processed!\n\n");
+    // If request ID was not found or already processed
+    printf("\033[1;31mError: Request ID not found or already processed!\033[0m\n\n");
 }
 
 // Function to display all approved accounts
@@ -552,11 +689,18 @@ int displayAllAccounts()
         printf("No Accounts found in your system!");
         return 0;
     }
-    printf("Approved Accounts:\n\nAccount No\tName\tMobile No\tAadhar No\tPAN No\n");
+    clearScreen();
+    printf("\n=======================================================================================\n");
+    printf("                                List of Active Accounts          \n");
+    printf("=======================================================================================\n");
+
+    // Table header with some formatting
+    printf("\033[1;34m%-20s %-20s %-15s %-15s %-15s\033[0m\n", "Account No", "Name", "Mobile No", "Aadhar No", "PAN No");
+    printf("----------------------------------------------------------------------------------------\n");
     for (int i = 0; i < accountCount; i++)
     {
-        printf("XXXXXXXX%d\t%s %s\t%s\t%s\t%s\n",
-               accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
+        printf("XXXXXXXX%d\t%-2s %-18s %-15s %-15s %-15s\n", accounts[i].accountNumber, accounts[i].firstName, accounts[i].lastName, accounts[i].mobileNo, accounts[i].aadharNo, accounts[i].panNo);
+        printf("----------------------------------------------------------------------------------------\n");
     }
     return 0;
 }
@@ -567,54 +711,73 @@ void adminMenu()
     int choice;
     while (1)
     {
-        printf("Admin Menu:\n");
-        printf("1. View Pending Account Requests\n");
-        printf("2. Approve/Reject Account Requests\n");
-        printf("3. View All Accounts\n");
-        printf("4. View Pending Card Requests\n");
-        printf("5. Approve/Reject Card Requests\n");
-        printf("6. View Pending Accounts to Unfreeze\n");
-        printf("7. Freeze/Unfreeze an Account\n");
-        printf("8. Delete an Account\n");
-        printf("9. Log Out\n");
-        printf("Enter your choice: ");
+        system("cls");
+        // Admin menu interface
+        printf("\n\033[1;36m===========================================\033[0m\n");
+        printf("               \033[1;34mAdmin Panel\033[0m                 \n");
+        printf("\033[1;36m===========================================\033[0m\n");
+        printf("  \033[1;32m1.\033[0m View Pending Account Opening Requests\n");
+        printf("  \033[1;32m2.\033[0m Approve/Reject Account Opening Requests\n");
+        printf("  \033[1;32m3.\033[0m View All Accounts\n");
+        printf("  \033[1;32m4.\033[0m View Pending Card Requests\n");
+        printf("  \033[1;32m5.\033[0m Approve/Reject Card Requests\n");
+        printf("  \033[1;32m6.\033[0m View Pending Accounts to Unfreeze\n");
+        printf("  \033[1;32m7.\033[0m Freeze/Unfreeze an Account\n");
+        printf("  \033[1;32m8.\033[0m Delete an Account\n");
+        printf("  \033[1;32m9.\033[0m Log Out\n");
+        printf("\033[1;36m===========================================\033[0m\n");
+        printf("Enter your choice (1-9): ");
+
+        // Use a scanf to read choice
         scanf("%d", &choice);
 
+        // Execute based on choice
         switch (choice)
         {
         case 1:
+            printf("\n\033[1;34mLoading pending account requests...\033[0m\n");
             viewPendingRequests();
             break;
         case 2:
+            printf("\n\033[1;34mOpening approval/rejection interface...\033[0m\n");
             approveOrRejectRequest();
             break;
         case 3:
+            printf("\n\033[1;34mDisplaying all accounts...\033[0m\n");
             displayAllAccounts();
             break;
         case 4:
+            printf("\n\033[1;34mLoading pending card requests...\033[0m\n");
             viewPendingCardRequests();
             break;
         case 5:
+            printf("\n\033[1;34mOpening card approval/rejection interface...\033[0m\n");
             approveOrRejectCardRequest();
             break;
         case 6:
+            printf("\n\033[1;34mFetching accounts to unfreeze...\033[0m\n");
             viewPendingUnfreezeRequests();
             break;
         case 7:
+            printf("\n\033[1;34mOpening account freeze/unfreeze options...\033[0m\n");
             freezeOrUnfreezeAccount();
             break;
         case 8:
+            printf("\n\033[1;34mOpening account deletion interface...\033[0m\n");
             deleteAccount();
             break;
         case 9:
-            return; // Log out
+            printf("\n\033[1;32mLogging out...\033[0m\n"); // Green color for successful logout
+            return;                                        // Log out and return to main menu
         default:
-            printf("Invalid choice! Please try again.\n");
+            printf("\n\033[1;31m Invalid choice! Please select a valid option (1-9).\033[0m\n"); // Red color for invalid input
+            break;
         }
 
-        printf("\nPress enter to return to the previous menu...");
-        getchar();
-        getchar();
+        // Wait for the user to press enter before going back to the menu
+        printf("\n\033[1;34mPress Enter to return to the Admin Menu...\033[0m");
+        getchar(); // Capture the newline left by scanf
+        getchar(); // Wait for user input
     }
 }
 
@@ -622,26 +785,28 @@ void adminMenu()
 int customerLogin()
 {
     char mobileNo[100], password[50];
+    system("cls");
 
-    printf("Enter Your Mobile Number: ");
+    printf("\n\033[1;34m========== Customer Login ==========\033[0m\n");
+    printf("\033[1;36mEnter Your Mobile Number: \033[0m");
     scanf("%s", mobileNo);
 
     int index = findAccountByMobileOnly(mobileNo); // Find by mobile number only
     if (index == -1)
     {
-        printf("Account with this mobile number not found!\n");
+        printf("\033[1;31mAccount with this mobile number not found!\033[0m\n");
         return 0;
     }
 
     while (1)
     {
-        printf("Enter Your Password: ");
+        printf("\033[1;36mEnter Your Password: \033[0m");
         scanf("%s", password);
 
         index = findAccountByPassword(password);
         if (index == -1)
         {
-            printf("Invalid password!\n");
+            printf("\033[1;31mInvalid password!\033[0m\n");
 
             // Provide forgot password option after failed login
             int choice;
@@ -678,13 +843,13 @@ int customerLogin()
                         }
                         else
                         {
-                            printf("Passwords do not match! Please try again.\n");
+                            printf("\033[1;31mPasswords do not match! Please try again.\033[0m\n");
                         }
                     }
                 }
                 else
                 {
-                    printf("Incorrect answer to the security question. Password reset failed.\n");
+                    printf("\033[1;31mIncorrect answer to the security question. Password reset failed.\033[0m\n");
                     return 0;
                 }
             }
@@ -695,15 +860,16 @@ int customerLogin()
             }
             else
             {
-                printf("Invalid choice! Please try again.\n");
+                printf("\033[1;31mInvalid choice! Please try again.\033[0m\n");
             }
         }
         else if (strcmp(accounts[index].status, "Frozen") == 0)
         {
-            printf("Your account is currently frozen. Please contact the admin.\n");
+            printf("\033[1;33mYour account is currently frozen. Please contact the admin.\033[0m\n");
             int choice;
             // Ask if they want to request to unfreeze the account
-            printf("Do you want to request to unfreeze your account?\n1. Yes\n2. No\nEnter your choice: ");
+            printf("\n\033[1;36mDo you want to request to unfreeze your account?\033[0m\n");
+            printf("1. Yes\n2. No\n\033[1;36mEnter your choice: \033[0m");
             scanf("%d", &choice);
 
             if (choice == 1)
@@ -712,23 +878,26 @@ int customerLogin()
                 FILE *file = fopen("unfreezeRequests.txt", "a");
                 if (file == NULL)
                 {
-                    printf("Error opening unfreeze request file!\n");
+                    printf("\033[1;31mError opening unfreeze request file! Please try again later.\033[0m\n");
                     return 0;
                 }
                 fprintf(file, "%d %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].lastName); // Store account number and name
                 fclose(file);
-                printf("Your request to unfreeze your account has been submitted.\n");
+                printf("\033[1;32mYour request to unfreeze your account has been submitted successfully.\033[0m\n");
                 return 0;
             }
             else
             {
-                printf("No request submitted.\n");
+                printf("\033[1;33mNo request submitted. Returning to the main menu.\033[0m\n");
                 return 0;
             }
         }
         else
         {
-            printf("Login successful!\n");
+            // Successful login
+            system("cls");
+            printf("\033[1;32mLogin successful! Welcome, %s %s.\033[0m\n", accounts[index].firstName, accounts[index].lastName);
+            clearScreen();
             customerPostLoginMenu(&accounts[index]);
             return 1;
         }
@@ -744,16 +913,28 @@ int displaySecurityQuestion(int choice)
     switch (ch)
     {
     case 1:
-        printf("What is your mother's maiden name?\n");
-        break;
-    case 2:
         printf("What was the name of your first pet?\n");
         break;
-    case 3:
+    case 2:
         printf("What is the name of the city where you were born?\n");
         break;
-    case 4:
+    case 3:
         printf("Who is your favorit singer?\n");
+        break;
+    case 4:
+        printf("What color do you like the most?\n");
+        break;
+    case 5:
+        printf("What is your favorite book?\n");
+        break;
+    case 6:
+        printf("Which teacher did you like the most at school?\n");
+        break;
+    case 7:
+        printf("What is your favorite sport?\n");
+        break;
+    case 8:
+        printf("Who is your favorite actor?\n");
         break;
     default:
         break;
@@ -794,12 +975,16 @@ void transferMoney(struct Account *loggedInCustomer)
     float amount;
     char enteredPin[10];
 
-    printf("Enter The Last 4 Digits of The Receiver's Account Number: ");
+    printf("\n\033[1;34m==================== Money Transfer ====================\033[0m\n\n");
+
+    // Input receiver account number
+    printf("\033[1;36mEnter The Last 4 Digits of The Receiver's Account Number: \033[0m");
     scanf("%d", &receiverAccountNumber);
 
+    // Check if sender is trying to transfer to their own account
     if (loggedInCustomer->accountNumber == receiverAccountNumber)
     {
-        printf("Invalid Account !!!");
+        printf("\033[1;31mError: You cannot transfer money to your own account!\033[0m\n");
         return;
     }
 
@@ -814,32 +999,33 @@ void transferMoney(struct Account *loggedInCustomer)
         }
     }
 
-    // Check if receiver's account exists
+    // Check if the receiver's account exists
     if (receiverIndex == -1)
     {
-        printf("Receiver's account not found!\n");
+        printf("\033[1;31mError: Receiver's account not found! Please verify the account number.\033[0m\n");
         return;
     }
 
-    printf("Enter Amount to Transfer: ");
+    // Input transfer amount
+    printf("\033[1;36mEnter Amount to Transfer: \033[0m");
     scanf("%f", &amount);
 
-    // Check if sender has sufficient balance
+    // Check if the sender has enough balance
     if (loggedInCustomer->balance < amount)
     {
-        printf("Insufficient balance!\n");
+        printf("\033[1;31mError: Insufficient balance! Your current balance is: Rs. %.2f/-\033[0m\n", loggedInCustomer->balance);
         return;
     }
 
     // Verify transaction PIN
     while (1)
     {
-        printf("Enter your 4-digit transaction PIN: ");
+        printf("\033[1;36mEnter your 4-digit transaction PIN: \033[0m");
         scanf("%s", enteredPin);
 
         if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
         {
-            printf("Invalid transaction PIN!\n");
+            printf("\033[1;31mError: Invalid transaction PIN!\033[0m\n");
             // return;
 
             // Provide forgot PIN option after failed transaction
@@ -919,7 +1105,8 @@ void transferMoney(struct Account *loggedInCustomer)
     transactions[transactionCount].amount = amount;
     transactionCount++;
 
-    printf("Transfer successful! New balance: %.2f\n", loggedInCustomer->balance);
+    printf("\033[1;32mTransfer successful! Rs. %.2f/- has been sent to Account No: XXXXXXXX%d\033[0m\n", amount, receiverAccountNumber);
+    printf("\033[1;36mYour new balance is: Rs. %.2f/-\033[0m\n", loggedInCustomer->balance);
 
     // Save updated accounts and transactions to file
     saveAccountsToFile();
@@ -929,64 +1116,120 @@ void transferMoney(struct Account *loggedInCustomer)
 // Function to view transaction history
 void viewTransactionHistory(struct Account *loggedInCustomer)
 {
-    printf("\nTransaction History for Account Number XXXXXXXX%d:\n", loggedInCustomer->accountNumber);
+    int found = 0; // To track if there are any transactions
+
+    for (int i = 0; i < transactionCount; i++)
+    {
+        if (transactions[i].senderAccountNumber == loggedInCustomer->accountNumber)
+        {
+            found = 1;
+        }
+        else if (transactions[i].receiverAccountNumber == loggedInCustomer->accountNumber)
+        {
+            found = 1;
+        }
+    }
+
+    if (!found)
+    {
+        // If no transactions are found
+        system("cls");
+        printf("\n\033[1;33mNo transactions found for this account.\033[0m\n");
+        return;
+    }
+    system("cls");
+    printf("\n\033[1;34m====================== Transaction History ======================\033[0m\n\n");
+    printf("\033[1;36mAccount Number: \033[0mXXXXXXXX%d\n", loggedInCustomer->accountNumber);
     printf("--------------------------------------------------------------------\n");
-    printf("|   Type   |     Amount    |   Related Account   |\n");
+    printf("\033[1;32m|   Type   |     %-14s    |   Related Account   |\033[0m\n", "Amount");
     printf("--------------------------------------------------------------------\n");
 
     for (int i = 0; i < transactionCount; i++)
     {
         if (transactions[i].senderAccountNumber == loggedInCustomer->accountNumber)
         {
-            // This is a debit transaction
-            printf("|  Debit   |    %.2f     |  To   XXXXXXXX%d   |\n", transactions[i].amount, transactions[i].receiverAccountNumber);
+            // Debit transaction (outgoing)
+            printf("\033[1;31m|  Debit   |    %-14.2f     |  To   XXXXXXXX%d   |\033[0m\n", transactions[i].amount, transactions[i].receiverAccountNumber);
+            found = 1;
         }
         else if (transactions[i].receiverAccountNumber == loggedInCustomer->accountNumber)
         {
-            // This is a credit transaction
-            printf("|  Credit  |    %.2f     |  From XXXXXXXX%d   |\n", transactions[i].amount, transactions[i].senderAccountNumber);
+            // Credit transaction (incoming)
+            printf("\033[1;32m|  Credit  |    %-14.2f     |  From XXXXXXXX%d   |\033[0m\n", transactions[i].amount, transactions[i].senderAccountNumber);
+            found = 1;
         }
     }
 
     printf("--------------------------------------------------------------------\n");
+    printf("\033[1;34m===================================================================\033[0m\n");
 }
 
 // Function to update customer profile
 void updateProfile(struct Account *loggedInCustomer)
 {
     int choice;
-    printf("\nUpdate Your Profile:\n");
-    printf("1. Update Name\n");
-    printf("2. Update Mobile Number\n");
-    printf("3. Update Aadhar Number\n");
-    printf("4. Cancel\n");
-    printf("Enter your choice: ");
+    system("cls");
+    printf("\033[1;34m\n************ Update Your Profile ************\033[0m\n\n");
+    printf("What would you like to update?\n");
+    printf("\033[1;33m  1. Name\033[0m\n");
+    printf("\033[1;33m  2. Mobile Number\033[0m\n");
+    printf("\033[1;33m  3. Aadhar Number\033[0m\n");
+    printf("\033[1;33m  4. Cancel\033[0m\n\n");
+    printf("Enter your choice (1-4): ");
+
     scanf("%d", &choice);
 
     switch (choice)
     {
     case 1:
-        printf("Enter New First Name: ");
+        printf("\033[1;36mEnter New First Name: \033[0m");
         scanf("%s", loggedInCustomer->firstName);
-        printf("Enter New Last Name: ");
+        printf("\033[1;36mEnter New Last Name: \033[0m");
         scanf("%s", loggedInCustomer->lastName);
-        printf("Name updated successfully!\n");
+        printf("\033[1;32mName updated successfully!\033[0m\n");
+
         break;
     case 2:
-        printf("Enter New Mobile Number: ");
-        scanf("%s", loggedInCustomer->mobileNo);
-        printf("Mobile Number updated successfully!\n");
+        while (1)
+        {
+            printf("\033[1;36mEnter Your Mobile No : \033[0m");
+            scanf("%s", loggedInCustomer->mobileNo);
+
+            if (strlen(loggedInCustomer->mobileNo) == 10 && strspn(loggedInCustomer->mobileNo, "0123456789") == 10)
+            {
+                printf("\033[1;32mMobile Number updated successfully!\033[0m\n");
+
+                break;
+            }
+            else
+            {
+                printf("\033[1;31mInvalid Mobile Number! Please enter exactly 10 digits.\033[0m\n");
+            }
+        }
         break;
+
     case 3:
-        printf("Enter New Aadhar Number: ");
-        scanf("%s", loggedInCustomer->aadharNo);
-        printf("Mobile Number updated successfully!\n");
+        while (1)
+        {
+            printf("\033[1;36mEnter Your Aadhar No : \033[0m");
+            scanf("%s", loggedInCustomer->aadharNo);
+
+            if (strlen(loggedInCustomer->aadharNo) == 12 && strspn(loggedInCustomer->aadharNo, "0123456789") == 12)
+            {
+                printf("\033[1;32mAadhar Number is valid, confirmed and updated successfully!\033[0m\n");
+                break;
+            }
+            else
+            {
+                printf("\033[1;31mInvalid Aadhar Number! Please enter exactly 12 digits.\033[0m\n");
+            }
+        }
         break;
     case 4:
-        printf("Profile update canceled.\n");
+        printf("\033[1;31mProfile update canceled.\033[0m\n");
         return;
     default:
-        printf("Invalid choice! Please try again.\n");
+        printf("\033[1;31mInvalid choice! Please try again.\033[0m\n");
         break;
     }
 
@@ -1001,27 +1244,39 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
     int choice;
     while (1)
     {
-        printf("\nCustomer Menu:\n");
-        printf("1. View Account Details\n");
-        printf("2. Check Balance\n");
-        printf("3. Money Transfer\n");
-        printf("4. View Transactions\n");
-        printf("5. My Cards\n");
-        printf("6. Update Profile\n");
-        printf("7. Logout\n");
-        printf("Enter your choice: ");
+        // clearScreen();
+        system("cls");
+        printf("\n\033[1;35m========== Welcome to Your Personal Banking Portal ==========\033[0m\n");
+        printf("\033[1;36mHello, %s! What would you like to do today?\033[0m\n\n", loggedInCustomer->firstName);
+        printf("\033[1;32m1. View Account Details\033[0m\n");
+        printf("\033[1;32m2. Check Balance\033[0m\n");
+        printf("\033[1;32m3. Transfer Money\033[0m\n");
+        printf("\033[1;32m4. View Recent Transactions\033[0m\n");
+        printf("\033[1;32m5. Manage My Cards\033[0m\n");
+        printf("\033[1;32m6. Update Profile\033[0m\n");
+        printf("\033[1;31m7. Logout\033[0m\n");
+        printf("===========================================================\n");
+        printf("\033[1;36mPlease select an option by entering the corresponding number: \033[0m");
         scanf("%d", &choice);
 
         switch (choice)
         {
         case 1:
-            printf("Account Number: XXXXXXXX%d\nName: %s %s\nMobile No: %s\n",
-                   loggedInCustomer->accountNumber, loggedInCustomer->firstName, loggedInCustomer->lastName, loggedInCustomer->mobileNo);
+            system("cls");
+            printf("\n\033[1;33m Account Details \033[0m\n");
+            printf("\033[1;37mAccount Number: \033[0mXXXXXXXX%d\n", loggedInCustomer->accountNumber);
+            printf("\033[1;37mName: \033[0m%s %s\n", loggedInCustomer->firstName, loggedInCustomer->lastName);
+            printf("\033[1;37mMobile No: \033[0m%s\n", loggedInCustomer->mobileNo);
             break;
         case 2:
-            printf("Current Balance: %.2f\n", loggedInCustomer->balance);
+            system("cls");
+            printf("\n\033[1;33m Current Balance \033[0m\n");
+            printf("\033[1;37mYour balance is: \033[0mRs. %.2f/-\n", loggedInCustomer->balance);
             break;
         case 3:
+            system("cls");
+            printf("\n\033[1;33m Let's transfer some money!\033[0m\n");
+            clearScreen();
             transferMoney(loggedInCustomer);
             break;
         case 4:
@@ -1034,13 +1289,14 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
             updateProfile(loggedInCustomer);
             break;
         case 7:
-            printf("Logging out...\n");
+            printf("\n\033[1;31m Logging out...\033[0m\n");
+            printf("\033[1;36mThank you for banking with us, %s! See you again soon!\033[0m\n", loggedInCustomer->firstName);
             return;
         default:
-            printf("Invalid choice! Please try again.\n");
+            printf("\n\033[1;31mOops! That doesn't seem right. Please enter a valid option.\033[0m\n");
         }
 
-        printf("\nPress enter to return to the previous menu...");
+        printf("\n\033[1;36mPress Enter to go back to the previous menu...\033[0m");
         getchar(); // To capture the newline after input
         getchar(); // To wait for the user to press enter
     }
@@ -1052,11 +1308,17 @@ void customerMenu()
     int choice;
     while (1)
     {
-        printf("\nYour Menu:\n");
-        printf("1. Login\n");
-        printf("2. Sign Up (Request Account Creation)\n");
-        printf("3. Go To Home\n");
-        printf("Enter your choice: ");
+        clearScreen();
+        printf("\n\033[1;36m=======================================\033[0m\n");
+        printf("\033[1;36m          Welcome to Your Menu         \033[0m\n");
+        printf("\033[1;36m=======================================\033[0m\n");
+
+        printf("\n\033[1;33m1.  Login\033[0m\n");
+        printf("\033[1;33m2.  Sign Up (Application for Account Opening)\033[0m\n");
+        printf("\033[1;33m3.  Go To Home\033[0m\n");
+
+        printf("\n\033[1;32mPlease Enter Your Choice (1-3): \033[0m");
+
         scanf("%d", &choice);
 
         switch (choice)
@@ -1066,15 +1328,20 @@ void customerMenu()
             {
                 // Successful login, proceed to post-login menu
             }
+            else
+            {
+                printf("\n\033[1;31m Login failed! Please check your credentials.\033[0m\n");
+            }
             break;
         case 2:
             requestAccountCreation();
             break;
         case 3:
             // Return to the main menu (exit customer menu loop)
+            printf("\n\033[1;33mReturning to the Home...\033[0m\n");
             return;
         default:
-            printf("Invalid choice! Please try again.\n");
+            printf("\n\033[1;31m Invalid choice! Please try again.\033[0m\n");
         }
     }
 }
@@ -1085,22 +1352,31 @@ void requestCard(struct Account *loggedInCustomer)
     struct CardRequest newCardRequest;
     newCardRequest.requestID = cardRequestCount + 1;
     newCardRequest.accountNumber = loggedInCustomer->accountNumber;
-
-    printf("Request a Card:\n1. Debit\n2. Credit\nEnter your choice: ");
+    system("cls");
+    printf("Redirecting to the Card Request Portal...");
+    clearScreen();
+    printf("\n\033[1;34m========== Card Request Portal ==========\033[0m\n\n");
+    printf("\033[1;36mHello, %s! Let's help you request a new card.\033[0m\n", loggedInCustomer->firstName);
+    printf("What type of card would you like to request?\n\n");
+    printf("\033[1;32m1. Debit Card\033[0m\n");
+    printf("\033[1;32m2. Credit Card\033[0m\n");
+    printf("\033[1;36mEnter your choice: \033[0m");
     int choice;
     scanf("%d", &choice);
 
     if (choice == 1)
     {
         strcpy(newCardRequest.cardType, "Debit");
+        printf("\n\033[1;33mYou've chosen to request a Debit Card.\033[0m\n");
     }
     else if (choice == 2)
     {
         strcpy(newCardRequest.cardType, "Credit");
+        printf("\n\033[1;33mYou've chosen to request a Credit Card.\033[0m\n");
     }
     else
     {
-        printf("Invalid choice!\n");
+        printf("\n\033[1;31mOops! Invalid choice. Please try again.\033[0m\n");
         return;
     }
 
@@ -1109,7 +1385,8 @@ void requestCard(struct Account *loggedInCustomer)
     // Save the request
     cardRequests[cardRequestCount++] = newCardRequest;
     saveCardRequests(); // Save the updated requests to file
-    printf("Card Request Submitted!\n\n");
+    printf("\n\033[1;32m Your %s Card request has been successfully submitted! \033[0m\n", newCardRequest.cardType);
+    printf("\033[1;36mYour request is now under review, and you'll be notified once processed. \033[0m\n");
 }
 
 // Function for admin to view all pending card requests
@@ -1119,19 +1396,27 @@ void viewPendingCardRequests()
 
     for (int i = 0; i < cardRequestCount; i++)
     {
-        foundCardRequest = 1;
+        if (strcmp(cardRequests[i].status, "Pending") == 0)
+        {
+            foundCardRequest = 1;
+        }
     }
     if (!foundCardRequest)
     {
-        printf("No card request found!");
+        printf("\n\033[1;33mGreat! There are no pending card requests at the moment.\033[0m\n");
         return;
     }
-    printf("Pending Card Requests:\nRequest ID\tAccount Number\tCard Type\n");
+    printf("\n\033[1;34m========== Pending Card Requests ==========\033[0m\n");
+    printf("\033[1;36mBelow are the card requests that are currently pending:\033[0m\n\n");
+
+    // Table headers with better formatting
+    printf("\033[1;32m%-15s %-20s %-15s\033[0m\n", "Request ID", "Account Number", "Card Type");
+    printf("-------------------------------------------------------------\n");
     for (int i = 0; i < cardRequestCount; i++)
     {
         if (strcmp(cardRequests[i].status, "Pending") == 0)
         {
-            printf(" %d\t\t%d\t\t%s\n",
+            printf("\033[1;37m%-15d %-20d %-15s\033[0m\n",
                    cardRequests[i].requestID, cardRequests[i].accountNumber, cardRequests[i].cardType);
         }
     }
@@ -1142,16 +1427,22 @@ void viewPendingCardRequests()
 void approveOrRejectCardRequest()
 {
     int requestID, choice;
-    printf("Enter Card Request ID to Approve/Reject: ");
+    printf("\n\033[1;34m========== Approve or Reject Card Request ==========\033[0m\n");
+    printf("\033[1;36mEnter the Card Request ID you would like to process: \033[0m");
     scanf("%d", &requestID);
 
+    // Loop through the requests to find the matching one
     for (int i = 0; i < cardRequestCount; i++)
     {
         if (cardRequests[i].requestID == requestID && strcmp(cardRequests[i].status, "Pending") == 0)
         {
-            printf("Request Details:\nAccount Number: %d\nCard Type: %s\n",
-                   cardRequests[i].accountNumber, cardRequests[i].cardType);
-            printf("1. Approve\n2. Reject\nEnter your choice: ");
+            printf("\n\033[1;33mRequest Details:\033[0m\n");
+            printf("\033[1;37mAccount Number: \033[0m%d\n", cardRequests[i].accountNumber);
+            printf("\033[1;37mCard Type: \033[0m%s\n", cardRequests[i].cardType);
+
+            // Present options to approve or reject
+            printf("\n\033[1;32m1. Approve\033[0m\n\033[1;31m2. Reject\033[0m\n");
+            printf("\033[1;36mEnter your choice: \033[0m");
             scanf("%d", &choice);
 
             if (choice == 1)
@@ -1160,30 +1451,38 @@ void approveOrRejectCardRequest()
                 struct Card newCard;
                 newCard.accountNumber = cardRequests[i].accountNumber;
                 strcpy(newCard.cardType, cardRequests[i].cardType);
-                generateCardDetails(&newCard);
+                generateCardDetails(&newCard); // Generate card details (e.g., number, CVV)
 
                 strcpy(newCard.cardStatus, "Active");
                 cards[cardCount++] = newCard;
-                saveCards(); // Save the approved card to file
+                saveCards(); // Save the approved card to the file
 
-                strcpy(cardRequests[i].status, "Approved"); // Update request status
-                saveCardRequests();                         // Save updated requests to file
-                printf("Card Request Approved!");
+                strcpy(cardRequests[i].status, "Approved");
+                saveCardRequests(); // Save updated requests to the file
+
+                printf("\n\033[1;32m Card Request Approved! \033[0m\n");
+                printf("\033[1;36mThe new card has been generated and is now active.\033[0m\n");
             }
             else if (choice == 2)
             {
-                strcpy(cardRequests[i].status, "Rejected"); // Update request status
-                saveCardRequests();                         // Save updated requests to file
-                printf("Card Request Rejected!\n\n");
+                // Reject the card request
+                strcpy(cardRequests[i].status, "Rejected");
+                saveCardRequests(); // Save updated requests to the file
+
+                printf("\n\033[1;31m Card Request Rejected!\033[0m\n");
+                printf("\033[1;36mThis card request has been successfully marked as rejected.\033[0m\n");
             }
             else
             {
-                printf("Invalid choice!\n");
+                printf("\n\033[1;31mInvalid choice! Please select a valid option.\033[0m\n");
             }
             return;
         }
     }
-    printf("Request ID not found or already processed!\n\n");
+
+    // If the request ID was not found or already processed
+    printf("\n\033[1;33m Request ID not found or already processed!\033[0m\n");
+    printf("\033[1;36mPlease enter a valid request ID to continue.\033[0m\n");
 }
 
 // Function to generate card details (card number, CVV, pin)
@@ -1210,11 +1509,15 @@ void customerCardManagement(struct Account *loggedInCustomer)
 
     while (1) // Loop to stay in card management until the user chooses to exit
     {
-        printf("\n==== Card Management ====\n");
-        printf("1. Request a New Card\n");
-        printf("2. Manage Your Cards\n");
-        printf("3. Go To Previous Menu\n");
-        printf("Enter your choice: ");
+        system("cls");
+        printf("Redirecting to the Card Management...");
+        clearScreen();
+        printf("\n\033[1;34m=============== Card Management ===============\033[0m\n\n");
+        printf("\033[1;36mWhat would you like to do today, %s?\033[0m\n\n", loggedInCustomer->firstName);
+        printf("\033[1;32m1. Request a New Card\033[0m\n");
+        printf("\033[1;32m2. Manage Your Cards\033[0m\n");
+        printf("\033[1;31m3. Go To Previous Menu\033[0m\n");
+        printf("\033[1;36mEnter your choice: \033[0m");
         scanf("%d", &choice);
 
         switch (choice)
@@ -1240,7 +1543,8 @@ void customerCardManagement(struct Account *loggedInCustomer)
 
             if (found)
             {
-                printf("\n==== Manage Your Cards ====\n");
+                system("cls");
+                printf("\n\033[1;33m========= Your Cards =========\033[0m\n\n");
 
                 // Loop through all cards linked to the customer's account
                 for (int i = 0; i < cardCount; i++)
@@ -1249,19 +1553,19 @@ void customerCardManagement(struct Account *loggedInCustomer)
                     {
 
                         int manageChoice;
-                        while (1) // Loop to stay in card management until the user chooses to exit
+                        while (1) // Loop to stay in card management for each card
                         {
-                            printf("Card Details:\n");
-                            printf("Card Number: XXXX XXXX %d\n", cards[i].cardNumber);
-                            printf("Card Expiry Date: 12/31");
-                            printf("CVV: %d\n", cards[i].cvv);
-                            printf("Card Type: %s\n", cards[i].cardType);
-                            printf("Status: %s\n", cards[i].cardStatus);
-                            printf("\nOptions:\n");
-                            printf("1. Generate/Change PIN\n");
-                            printf("2. Block/Unblock Card\n");
-                            printf("3. Go to Previous Menu\n");
-                            printf("Enter your choice: ");
+                            printf("\033[1;37mCard Details:\033[0m\n");
+                            printf("\033[1;37mCard Number: \033[0mXXXX XXXX %d\n", cards[i].cardNumber);
+                            printf("\033[1;37mCVV: \033[0m%d\n", cards[i].cvv);
+                            printf("\033[1;37mExpiry Date: 12/31\033[0m\n");
+                            printf("\033[1;37mCard Type: \033[0m%s\n", cards[i].cardType);
+                            printf("\033[1;37mStatus: \033[0m%s\n", cards[i].cardStatus);
+                            printf("\n\033[1;36mOptions:\033[0m\n");
+                            printf("\033[1;32m1. Generate/Change PIN\033[0m\n");
+                            printf("\033[1;32m2. Block/Unblock Card\033[0m\n");
+                            printf("\033[1;31m3. Go to Previous Menu\033[0m\n");
+                            printf("\033[1;36mEnter your choice: \033[0m");
                             scanf("%d", &manageChoice);
 
                             switch (manageChoice)
@@ -1282,7 +1586,7 @@ void customerCardManagement(struct Account *loggedInCustomer)
                                 break;
 
                             default:
-                                printf("Invalid choice! Please try again.\n");
+                                printf("\n\033[1;31mInvalid choice! Please try again.\033[0m\n");
                                 break;
                             }
                         }
@@ -1291,17 +1595,16 @@ void customerCardManagement(struct Account *loggedInCustomer)
             }
             else
             {
-                printf("No cards linked to your account.\n");
+                printf("\n\033[1;33mNo cards linked to your account.\033[0m\n");
             }
             break;
         }
 
         case 3:
-            // Return to previous menu
             return;
 
         default:
-            printf("Invalid choice! Please enter a valid option.\n");
+            printf("\n\033[1;31mInvalid choice! Please enter a valid option.\033[0m\n");
             break;
         }
 
@@ -1312,22 +1615,22 @@ void customerCardManagement(struct Account *loggedInCustomer)
 // Function to change or generate the card PIN
 void changeCardPin(struct Card *card)
 {
-    // If the card has no PIN set initially, prompt to create a new PIN
+    // If no PIN is set, prompt the user to create a new one
     if (strcmp(card->cardPin, "0") == 0)
     {
-        printf("No PIN is currently set for this card.\n");
+        printf("\n\033[1;33mNo PIN is currently set for this card.\033[0m\n");
         char newPin[6], confirmPin[6];
 
-        // Loop to ensure the user sets a valid PIN
+        // Loop to ensure a valid PIN is set
         while (1)
         {
-            printf("Enter a new 4-digit PIN: ");
+            printf("\033[1;36mEnter a new 4-digit PIN: \033[0m");
             scanf("%s", newPin);
 
-            // Check if the entered PIN is 4 digits long
+            // Ensure the entered PIN is exactly 4 digits
             if (strlen(newPin) == 4)
             {
-                printf("Confirm the new PIN: ");
+                printf("\033[1;36mConfirm the new PIN: \033[0m");
                 scanf("%s", confirmPin);
 
                 // Check if the confirmed PIN matches
@@ -1335,42 +1638,45 @@ void changeCardPin(struct Card *card)
                 {
                     strcpy(card->cardPin, newPin); // Set the new PIN
                     saveCards();                   // Save updated PIN to file
-                    printf("PIN successfully created!\n");
+                    system("cls");
+                    printf("\n\033[1;32m PIN successfully created!\033[0m\n");
+                    clearScreen();
                     break;
                 }
                 else
                 {
-                    printf("PINs do not match. Please try again.\n");
+                    printf("\n\033[1;31m PINs do not match. Please try again.\033[0m\n");
                 }
             }
             else
             {
-                printf("Invalid PIN format. Must be exactly 4 digits.\n");
+                printf("\n\033[1;31m Invalid PIN format. Must be exactly 4 digits.\033[0m\n");
             }
         }
     }
     else
     {
-        // If the card already has a PIN, ask the customer to enter the current PIN to change it
+        // If a PIN is already set, ask the user to enter the current PIN before changing it
         char currentPin[6];
-        printf("Enter current PIN: ");
+        printf("\n\033[1;33mA PIN is already set for this card.\033[0m\n");
+        printf("\033[1;36mEnter current PIN: \033[0m");
         scanf("%s", currentPin);
 
-        // Check if the current PIN matches
+        // Verify the current PIN
         if (strcmp(card->cardPin, currentPin) == 0)
         {
             char newPin[6], confirmPin[6];
 
-            // Loop to ensure the user sets a valid new PIN
+            // Loop to ensure a valid new PIN is set
             while (1)
             {
-                printf("Enter a new 4-digit PIN: ");
+                printf("\033[1;36mEnter a new 4-digit PIN: \033[0m");
                 scanf("%s", newPin);
 
-                // Check if the entered new PIN is 4 digits long
+                // Ensure the new PIN is exactly 4 digits
                 if (strlen(newPin) == 4)
                 {
-                    printf("Confirm the new PIN: ");
+                    printf("\033[1;36mConfirm the new PIN: \033[0m");
                     scanf("%s", confirmPin);
 
                     // Check if the confirmed new PIN matches
@@ -1378,23 +1684,25 @@ void changeCardPin(struct Card *card)
                     {
                         strcpy(card->cardPin, newPin); // Update the PIN
                         saveCards();                   // Save updated PIN to file
-                        printf("PIN successfully changed!\n");
+                        system("cls");
+                        printf("\n\033[1;32m PIN successfully changed!\033[0m\n");
+                        clearScreen();
                         break;
                     }
                     else
                     {
-                        printf("PINs do not match. Please try again.\n");
+                        printf("\n\033[1;31m PINs do not match. Please try again.\033[0m\n");
                     }
                 }
                 else
                 {
-                    printf("Invalid PIN format. Must be exactly 4 digits.\n");
+                    printf("\n\033[1;31m Invalid PIN format. Must be exactly 4 digits.\033[0m\n");
                 }
             }
         }
         else
         {
-            printf("Incorrect current PIN!\n");
+            printf("\n\033[1;31m Incorrect current PIN!\033[0m\n");
         }
     }
 }
@@ -1402,10 +1710,17 @@ void changeCardPin(struct Card *card)
 // Function to block or unblock a card
 void blockOrUnblockCard(struct Card *card)
 {
+    printf("\n\033[1;36m=== Card Status ===\033[0m\n\n");
+
     if (strcmp(card->cardStatus, "Active") == 0)
     {
-        printf("Card is currently Active.\n");
-        printf("Do you want to:\n1. Block Temporarily\n2. Block Permanently\nEnter your choice: ");
+        printf("\033[1;33mYour card is currently \033[1;32mActive.\033[0m\n");
+        printf("\033[1;36mDo you want to:\033[0m\n");
+        printf("1. \033[1;31mBlock Temporarily\033[0m\n");
+        printf("2. \033[1;31mBlock Permanently\033[0m\n");
+        printf("3. \033[1;36mCancel\033[0m\n");
+        printf("\033[1;36mEnter your choice: \033[0m");
+
         int choice;
         scanf("%d", &choice);
 
@@ -1413,23 +1728,31 @@ void blockOrUnblockCard(struct Card *card)
         {
             strcpy(card->cardStatus, "Temporarily Blocked");
             saveCards(); // Save updated status to file
-            printf("Card has been temporarily blocked.\n");
+            printf("\n\033[1;32m Card has been temporarily blocked.\033[0m\n");
         }
         else if (choice == 2) // Permanently block the card
         {
             strcpy(card->cardStatus, "Permanently Blocked");
             saveCards(); // Save updated status to file
-            printf("Card has been permanently blocked. It cannot be unblocked.\n");
+            printf("\n\033[1;31m Card has been permanently blocked. It cannot be unblocked.\033[0m\n");
+        }
+        else if (choice == 3) // Return to the previous menu
+        {
+            return;
         }
         else
         {
-            printf("Invalid choice!\n");
+            printf("\n\033[1;31m Invalid choice! Please try again.\033[0m\n");
         }
     }
     else if (strcmp(card->cardStatus, "Temporarily Blocked") == 0)
     {
-        printf("Card is currently Temporarily Blocked.\n");
-        printf("Do you want to unblock the card? (1 for Yes, 0 for No): ");
+        printf("\033[1;33mYour card is currently Temporarily Blocked.\033[0m\n");
+        printf("\033[1;36mDo you want to unblock the card?\033[0m\n");
+        printf("1. \033[1;32m1. Yes, Unblock it\033[0m\n");
+        printf("0. \033[1;31m2. No, Keep it blocked\033[0m\n");
+        printf("\033[1;36mEnter your choice: \033[0m");
+
         int choice;
         scanf("%d", &choice);
 
@@ -1437,16 +1760,24 @@ void blockOrUnblockCard(struct Card *card)
         {
             strcpy(card->cardStatus, "Active");
             saveCards(); // Save updated status to file
-            printf("Card has been unblocked and is now Active.\n");
+            printf("\n\033[1;32m Card has been unblocked and is now Active.\033[0m\n");
+        }
+        else if (choice == 2)
+        {
+            printf("\n\033[1;33mCard remains temporarily blocked.\033[0m\n");
+        }
+        else
+        {
+            printf("\n\033[1;31m Invalid choice! Please try again.\033[0m\n");
         }
     }
     else if (strcmp(card->cardStatus, "Permanently Blocked") == 0)
     {
-        printf("Card is Permanently Blocked. It cannot be unblocked.\n");
+        printf("\n\033[1;31m This card is Permanently Blocked and cannot be unblocked.\033[0m\n");
     }
     else
     {
-        printf("Card status is unknown.\n");
+        printf("\n\033[1;31m Unknown card status! Please contact support.\033[0m\n");
     }
 }
 
@@ -1456,10 +1787,12 @@ void deleteAccount()
     int accountNumber;
     char confirmChoice;
 
-    printf("Enter Account Number to delete: ");
+    printf("\n\033[1;36m=== Delete Account ===\033[0m\n");
+    printf("\033[1;33mEnter Account Number to delete: \033[0m");
     scanf("%d", &accountNumber);
 
     int found = -1;
+
     // Search for the account by account number
     for (int i = 0; i < accountCount; i++)
     {
@@ -1473,11 +1806,11 @@ void deleteAccount()
     // If account is found
     if (found != -1)
     {
-        printf("Account found: %s %s (Account No: XXXXXXXX%d)\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
-        printf("Are you sure you want to delete this account?\n");
-        printf("1. Yes\n");
-        printf("2. No\n");
-        printf("Enter your choice: ");
+        printf("\n\033[1;33mAccount found:\033[0m %s %s \033[1;33m(Account No: XXXXXXXX%d)\033[0m\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
+        printf("\n\033[1;31m Warning: This action is irreversible! Are you sure you want to delete this account?\033[0m\n");
+        printf("\033[1;32m1. Yes, delete this account\033[0m\n");
+        printf("\033[1;31m2. No, keep the account\033[0m\n");
+        printf("\033[1;36mEnter your choice: \033[0m");
         scanf(" %c", &confirmChoice); // Adding space before %c to capture newline character properly
 
         if (confirmChoice == '1') // User chose "Yes"
@@ -1498,20 +1831,20 @@ void deleteAccount()
             // Save the updated accounts to file
             saveAccountsToFile();
             saveRequestedAccountsToFile();
-            printf("Account successfully deleted.\n");
+            printf("\n\033[1;32m Account successfully deleted.\033[0m\n");
         }
-        else if (confirmChoice == '2') // User choose "No"
+        else if (confirmChoice == '2') // User chose "No"
         {
-            printf("Account deletion cancelled.\n");
+            printf("\n\033[1;33mAccount deletion cancelled. No changes made.\033[0m\n");
         }
         else
         {
-            printf("Invalid choice! Account deletion cancelled.\n");
+            printf("\n\033[1;31m Invalid choice! Account deletion cancelled.\033[0m\n");
         }
     }
     else
     {
-        printf("Account not found!\n");
+        printf("\n\033[1;31m Account not found! Please check the account number and try again.\033[0m\n");
     }
 }
 
@@ -1519,10 +1852,13 @@ void deleteAccount()
 void freezeOrUnfreezeAccount()
 {
     int accountNumber, choice;
-    printf("Enter Account Number to freeze/unfreeze: ");
+
+    printf("\n\033[1;36m=== Freeze/Unfreeze Account ===\033[0m\n");
+    printf("\033[1;33mEnter Account Number to freeze/unfreeze: \033[0m");
     scanf("%d", &accountNumber);
 
     int found = -1;
+
     // Search for the account by account number
     for (int i = 0; i < accountCount; i++)
     {
@@ -1535,51 +1871,57 @@ void freezeOrUnfreezeAccount()
 
     if (found != -1)
     {
-        // Check the current status of the account
-        printf("Account found: %s %s (Account No: XXXXXXXX%d)\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
-        printf("Current Status: %s\n", accounts[found].status);
+        // Display account details
+        printf("\n\033[1;33mAccount found:\033[0m %s %s \033[1;33m(Account No: XXXXXXXX%d)\033[0m\n",
+               accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
+        printf("\033[1;33mCurrent Status:\033[0m \033[1;32m%s\033[0m\n", accounts[found].status);
+
         if (strcmp(accounts[found].status, "Active") == 0)
         {
-            // If account is active, allow freezing
-            printf("1. Freeze Account\n2. Cancel\nEnter your choice: ");
+            // If the account is active, provide the option to freeze it
+            printf("\033[1;36m1. Freeze Account\n\033[0m");
+            printf("\033[1;33m2. Cancel\033[0m\n");
+            printf("\033[1;36mEnter your choice: \033[0m");
             scanf("%d", &choice);
 
             if (choice == 1)
             {
-                strcpy(accounts[found].status, "Frozen"); // Set account status to Frozen
+                strcpy(accounts[found].status, "Frozen"); // Set account status to "Frozen"
                 saveAccountsToFile();
-                printf("Account has been frozen.\n");
+                printf("\n\033[1;32m Account has been successfully frozen.\033[0m\n");
             }
             else
             {
-                printf("Operation cancelled.\n");
+                printf("\n\033[1;33mOperation cancelled.\033[0m\n");
             }
         }
         else if (strcmp(accounts[found].status, "Frozen") == 0)
         {
-            // If account is frozen, allow unfreezing
-            printf("1. Unfreeze Account\n2. Cancel\nEnter your choice: ");
+            // If the account is frozen, provide the option to unfreeze it
+            printf("\033[1;36m1. Unfreeze Account\n\033[0m");
+            printf("\033[1;33m2. Cancel\033[0m\n");
+            printf("\033[1;36mEnter your choice: \033[0m");
             scanf("%d", &choice);
 
             if (choice == 1)
             {
-                strcpy(accounts[found].status, "Active"); // Set account status back to Active
+                strcpy(accounts[found].status, "Active"); // Set account status back to "Active"
                 saveAccountsToFile();
-                printf("Account has been unfrozen.\n");
+                printf("\n\033[1;32m Account has been successfully unfrozen.\033[0m\n");
             }
             else
             {
-                printf("Operation cancelled.\n");
+                printf("\n\033[1;33mOperation cancelled.\033[0m\n");
             }
         }
         else
         {
-            printf("Unknown account status!\n");
+            printf("\033[1;31m Unknown account status!\033[0m\n");
         }
     }
     else
     {
-        printf("Account not found!\n");
+        printf("\033[1;31m Account not found! Please check the account number and try again.\033[0m\n");
     }
 }
 
@@ -1635,6 +1977,76 @@ void removeUnfreezeRequest(int accountNumber)
     rename("temp.txt", "unfreezeRequests.txt");
 }
 
+void clearScreen()
+{
+    // Delay for 3 seconds
+    sleep(2);
+    // ANSI escape code to clear the screen
+    printf("\033[H\033[J");
+}
+
+void printWelcomeMessage() {
+    // Array to store a compact ASCII version of "WELCOME"
+    const char* welcome[5][7] = {
+        {GREEN "W   W" RESET, GREEN "EEEEE" RESET, GREEN "L    " RESET, GREEN " CCC " RESET, GREEN " OOO " RESET, GREEN "M   M" RESET, GREEN "EEEEE" RESET},
+        {GREEN "W   W" RESET, GREEN "E    " RESET, GREEN "L    " RESET, GREEN "C   C" RESET, GREEN "O   O" RESET, GREEN "MM MM" RESET, GREEN "E    " RESET},
+        {GREEN "W W W" RESET, GREEN "EEE  " RESET, GREEN "L    " RESET, GREEN "C    " RESET, GREEN "O   O" RESET, GREEN "M M M" RESET, GREEN "EEE  " RESET},
+        {GREEN "WW WW" RESET, GREEN "E    " RESET, GREEN "L    " RESET, GREEN "C   C" RESET, GREEN "O   O" RESET, GREEN "M   M" RESET, GREEN "E    " RESET},
+        {GREEN "W   W" RESET, GREEN "EEEEE" RESET, GREEN "LLLL " RESET, GREEN " CCC " RESET, GREEN " OOO " RESET, GREEN "M   M" RESET, GREEN "EEEEE" RESET}
+    };
+
+    // Array to store a compact ASCII version of "T"
+    const char* t[5][1] = {
+        {MAGENTA "          #####" RESET},
+        {MAGENTA "            #  " RESET},
+        {MAGENTA "            #  " RESET},
+        {MAGENTA "            #  " RESET},
+        {MAGENTA "            #  " RESET}
+    };
+
+    // Array to store a compact ASCII version of "O"
+    const char* o[5][1] = {
+        {MAGENTA " OOO " RESET},
+        {MAGENTA "O   O" RESET},
+        {MAGENTA "O   O" RESET},
+        {MAGENTA "O   O" RESET},
+        {MAGENTA " OOO " RESET}
+    };
+
+    // Array to store a compact ASCII version of "PSD BANK"
+    const char* psd_bank[5][8] = {
+        {YELLOW "PPPP " RESET, YELLOW " SSSS" RESET, YELLOW "DDDD " RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN " A A " RESET, CYAN "NN     N" RESET, CYAN "K  KK" RESET},
+        {YELLOW "P   P" RESET, YELLOW "S    " RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "B   B" RESET, CYAN "A   A" RESET, CYAN "N N    N" RESET, CYAN "K K " RESET},
+        {YELLOW "PPPP " RESET, YELLOW " SSS " RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN "AAAAA" RESET, CYAN "N  N   N" RESET, CYAN "KK  " RESET},
+        {YELLOW "P    " RESET, YELLOW "    S" RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "B   B" RESET, CYAN "A   A" RESET, CYAN "N    N N" RESET, CYAN "K K " RESET},
+        {YELLOW "P    " RESET, YELLOW "SSSS " RESET, YELLOW "DDDD " RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN "A   A" RESET, CYAN "N     NN" RESET, CYAN "K  KK" RESET}
+    };
+
+    // Print "WELCOME"
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 7; j++) {
+            printf("%s  ", welcome[i][j]);  
+        }
+        printf("\n");  
+    }
+
+    // Print "TO" with indentation
+    printf("\n");
+    for (int i = 0; i < 5; i++) {
+        printf("       "); // Indentation for "TO"
+        printf("%s  %s\n", t[i][0], o[i][0]);
+    }
+
+    // Print "PSD BANK"
+    printf("\n");
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 8; j++) {
+            printf("%s  ", psd_bank[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 int main()
 {
     loadAccountsFromFile();          // Load existing accounts
@@ -1646,16 +2058,33 @@ int main()
     Admin admins[MAX_ADMINS];
     int numAdmins = readCredentials(admins, MAX_ADMINS);
 
+    system("cls");
+    printWelcomeMessage();
+    sleep(3);
+
     int userType;
     while (1)
-    { // Loop for role selection
-        printf("Welcome to the PSD Bank!\n");
-        printf("Select your role:\n1. Customer\n2. Admin\n3. Exit\nEnter your choice: ");
+    {
+
+        // Clear the screen
+        clearScreen();
+
+        // Loop for role selection
+        printf("\n\033[1;36m=======================================\033[0m\n");
+        printf("      \033[1;34mWelcome to the PSD BANK!\033[0m   \n");
+        printf("\033[1;36m=======================================\033[0m\n");
+        printf("      \033[1;33mSelect your role:\033[0m\n");
+        printf("          \033[1;32m1. Customer\033[0m\n");
+        printf("          \033[1;32m2. Admin\033[0m\n");
+        printf("          \033[1;32m3. Exit\033[0m\n");
+        printf("\033[1;36m=======================================\033[0m\n");
+        printf("      \033[1;36mEnter your choice: \033[0m");
         scanf("%d", &userType);
 
         if (userType == 1)
         {
             // Customer Menu
+            printf("\n\033[1;34mRedirecting to Customer Menu...\033[0m\n");
             customerMenu();
         }
         else if (userType == 2)
@@ -1685,17 +2114,18 @@ int main()
             }
             else
             {
-                printf("Incorrect username or password! Access denied.\n");
+                printf("\n\033[1;31mIncorrect username or password! Access denied.\033[0m\n");
             }
         }
         else if (userType == 3)
         {
-            printf("Exiting the system. Goodbye!\n");
-            break; // Exit the program
+            system("cls");
+            printf("\n\033[1;32mExiting the system. Goodbye! Have a great day!\033[0m\n\n"); // Green color for exit message
+            break;                                                                           // Exit the program
         }
         else
         {
-            printf("Invalid selection! Please try again.\n");
+            printf("\n\033[1;31m Invalid selection! Please try again.\033[0m\n"); // Red color for error
         }
     }
 
