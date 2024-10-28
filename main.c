@@ -13,13 +13,13 @@
 #define FILENAME_REQUESTS "cardRequests.txt"
 
 // Define color codes
-#define RED     "\x1b[31m"
-#define GREEN   "\x1b[32m"
-#define YELLOW  "\x1b[33m"
-#define BLUE    "\x1b[34m"
-#define MAGENTA "\x1b[35m"
-#define CYAN    "\x1b[36m"
-#define RESET   "\x1b[0m"
+#define RED "\x1b[1;31m"
+#define GREEN "\x1b[1;32m"
+#define YELLOW "\x1b[1;33m"
+#define BLUE "\x1b[1;34m"
+#define MAGENTA "\x1b[1;35m"
+#define CYAN "\x1b[1;36m"
+#define RESET "\x1b[0m"
 
 // Structure for account creation requests
 struct AccountRequest
@@ -354,6 +354,7 @@ void requestAccountCreation()
     char transactionPin[6];        // For storing the transaction PIN
     char confirmTransactionPin[6]; // For confirming the transaction PIN
     int securityQuestionChoice;    // Choice of security question
+    system("cls");
 
     printf("\n\033[1;34m===== Application For Account Opening =====\033[0m\n\n");
 
@@ -457,7 +458,6 @@ void requestAccountCreation()
             printf("\033[1;31mTransaction PINs do not match! Please retype your PIN.\033[0m\n");
         }
     }
-
     // Security question section
     printf("\n\033[1;36m--------------------------------------------\033[0m\n");
     printf("\033[1;36m|        Account Recovery Setup            |\033[0m\n");
@@ -468,7 +468,7 @@ void requestAccountCreation()
     printf("\033[1;36m===========================================================\033[0m\n");
     printf("\033[1;33m1. What was the name of your first pet?\033[0m\n");
     printf("\033[1;33m2. What is the name of the city where you were born?\033[0m\n");
-    printf("\033[1;33m3. Who is your favorit singer?\033[0m\n");
+    printf("\033[1;33m3. Who is your favorite singer?\033[0m\n");
     printf("\033[1;33m4. What color do you like the most?\033[0m\n");
     printf("\033[1;33m5. What is your favorite book?\033[0m\n");
     printf("\033[1;33m6. Which teacher did you like the most at school?\033[0m\n");
@@ -810,7 +810,14 @@ int customerLogin()
 
             // Provide forgot password option after failed login
             int choice;
-            printf("1. Forgot Password\n2. Try Again\nEnter your choice: ");
+            printf("\033[1;36m\n========================================\033[0m\n");
+            printf("\033[1;31m            LOGIN FAILED                \033[0m\n");
+            printf("\033[1;36m========================================\033[0m\n\n");
+            printf("Please choose an option below:\n");
+            printf("\033[1;33m  1. Forgot Password\n");
+            printf("  2. Try Again\033[0m\n\n");
+            printf("Enter your choice (1-2): ");
+
             scanf("%d", &choice);
 
             if (choice == 1)
@@ -818,28 +825,39 @@ int customerLogin()
                 // Forgot password flow
                 // Ask the security question
                 index = findAccountByMobileOnly(mobileNo);
+                printf("\033[1;34m\n--- FORGOT PASSWORD ---\033[0m\n\n");
+                printf("To reset your password, please answer the following security question:\n\n");
+
                 displaySecurityQuestion(accounts[index].securityQuestion);
                 char answer[100];
-                printf("Enter Your Answer: ");
+                printf("\n\033[1;33mEnter Your Answer: \033[0m");
+
                 scanf("%s", answer);
 
                 if (strcmp(accounts[index].securityAnswer, answer) == 0)
                 {
                     // Allow resetting the password
                     char newPassword[50], confirmPassword[50];
+                    printf("\n\033[1;32mAnswer is correct!\033[0m\n");
+                    printf("Proceeding to password reset...\n\n");
+
                     while (1)
                     {
-                        printf("Enter a New Password: ");
+                        printf("\033[1;33mEnter a New Password: \033[0m");
                         scanf("%s", newPassword);
-                        printf("Confirm Your New Password: ");
+                        printf("\033[1;33mConfirm Your New Password: \033[0m");
                         scanf("%s", confirmPassword);
 
                         if (strcmp(newPassword, confirmPassword) == 0)
                         {
                             strcpy(accounts[index].password, newPassword); // Update password
                             strcpy(accountRequests[index].password, newPassword);
-                            printf("Password reset successful! You can now log in with your new password.\n");
-                            return 1;
+                            printf("\n\033[1;32m========================================\033[0m\n");
+                            printf("\033[1;32m       PASSWORD RESET SUCCESSFUL        \033[0m\n");
+                            printf("\033[1;32m========================================\033[0m\n\n");
+                            printf("You can now log in with your new password.\n");
+
+                            break;
                         }
                         else
                         {
@@ -1030,7 +1048,15 @@ void transferMoney(struct Account *loggedInCustomer)
 
             // Provide forgot PIN option after failed transaction
             int choice;
-            printf("1. Forgot Transaction PIN\n2. Try Again\nEnter your choice: ");
+            printf("\033[1;34m\n========================================\033[0m\n");
+            printf("\033[1;34m       TRANSACTION AUTHENTICATION       \033[0m\n");
+            printf("\033[1;34m========================================\033[0m\n\n");
+
+            printf("Please choose an option:\n");
+            printf("\033[1;33m  1. Forgot Transaction PIN\n");
+            printf("  2. Try Again\033[0m\n\n");
+            printf("Enter your choice (1-2): ");
+
             scanf("%d", &choice);
 
             if (choice == 1)
@@ -1040,14 +1066,19 @@ void transferMoney(struct Account *loggedInCustomer)
                 int index = findAccountByMobileOnly(loggedInCustomer->mobileNo);
                 if (index == -1)
                 {
-                    printf("Account not found for mobile number.\n");
+                    printf("\033[1;31m\nAccount not found for the provided mobile number.\033[0m\n");
+
                     return;
                 }
 
                 // Display the security question
+                printf("\033[1;34m\n--- FORGOT PIN ---\033[0m\n\n");
+                printf("To reset your transaction PIN, please answer the following security question:\n\n");
+
                 displaySecurityQuestion(accounts[index].securityQuestion);
                 char answer[100];
-                printf("Enter Your Answer: ");
+                printf("\n\033[1;33mEnter Your Answer: \033[0m");
+
                 scanf("%s", answer);
 
                 // Check the answer
@@ -1055,28 +1086,37 @@ void transferMoney(struct Account *loggedInCustomer)
                 {
                     // Allow resetting the PIN
                     char newPIN[10], confirmPIN[10];
+                    printf("\033[1;32m\nAnswer is correct!\033[0m\n");
+                    printf("Proceeding to PIN reset...\n\n");
+
                     while (1)
                     {
-                        printf("Enter a New 4-digit PIN: ");
+                        printf("\033[1;33mEnter a New 4-digit PIN: \033[0m");
                         scanf("%s", newPIN);
-                        printf("Confirm Your New PIN: ");
+                        printf("\033[1;33mConfirm Your New PIN: \033[0m");
                         scanf("%s", confirmPIN);
 
                         if (strcmp(newPIN, confirmPIN) == 0)
                         {
                             strcpy(accounts[index].transactionPin, newPIN); // Update transaction PIN
-                            printf("PIN reset successful!\n");
+                            printf("\n\033[1;32m========================================\033[0m\n");
+                            printf("\033[1;32m          PIN RESET SUCCESSFUL          \033[0m\n");
+                            printf("\033[1;32m========================================\033[0m\n\n");
+                            printf("You can now continue your transaction with the new PIN.\n");
+
                             break;
                         }
                         else
                         {
-                            printf("PINs do not match! Please try again.\n");
+                            printf("\033[1;31m\nPINs do not match! Please try again.\033[0m\n");
                         }
                     }
                 }
                 else
                 {
-                    printf("Incorrect answer to the security question. PIN reset failed.\n");
+                    printf("\033[1;31m\nIncorrect answer to the security question.\033[0m\n");
+                    printf("PIN reset failed. Please contact support for assistance.\n");
+
                     return;
                 }
             }
@@ -1086,7 +1126,7 @@ void transferMoney(struct Account *loggedInCustomer)
             }
             else
             {
-                printf("Invalid choice! Please try again.\n");
+                printf("\033[1;31m\nInvalid choice! Please select either 1 or 2.\033[0m\n");
             }
         }
         else
@@ -1595,7 +1635,9 @@ void customerCardManagement(struct Account *loggedInCustomer)
             }
             else
             {
-                printf("\n\033[1;33mNo cards linked to your account.\033[0m\n");
+
+                printf("\n\033[1;31mNo cards linked to your account.\033[0m\n");
+                clearScreen();
             }
             break;
         }
@@ -1618,7 +1660,7 @@ void changeCardPin(struct Card *card)
     // If no PIN is set, prompt the user to create a new one
     if (strcmp(card->cardPin, "0") == 0)
     {
-        printf("\n\033[1;33mNo PIN is currently set for this card.\033[0m\n");
+        printf("\n\033[1;31mNo PIN is currently set for this card.\033[0m\n");
         char newPin[6], confirmPin[6];
 
         // Loop to ensure a valid PIN is set
@@ -1787,8 +1829,8 @@ void deleteAccount()
     int accountNumber;
     char confirmChoice;
 
-    printf("\n\033[1;36m=== Delete Account ===\033[0m\n");
-    printf("\033[1;33mEnter Account Number to delete: \033[0m");
+    printf("\n\033[1;31m=== Delete Account ===\033[0m\n");
+    printf("\033[1;31mEnter Account Number to delete: \033[0m");
     scanf("%d", &accountNumber);
 
     int found = -1;
@@ -1808,8 +1850,8 @@ void deleteAccount()
     {
         printf("\n\033[1;33mAccount found:\033[0m %s %s \033[1;33m(Account No: XXXXXXXX%d)\033[0m\n", accounts[found].firstName, accounts[found].lastName, accounts[found].accountNumber);
         printf("\n\033[1;31m Warning: This action is irreversible! Are you sure you want to delete this account?\033[0m\n");
-        printf("\033[1;32m1. Yes, delete this account\033[0m\n");
-        printf("\033[1;31m2. No, keep the account\033[0m\n");
+        printf("\033[1;31m1. Yes, delete this account\033[0m\n");
+        printf("\033[1;32m2. No, keep the account\033[0m\n");
         printf("\033[1;36mEnter your choice: \033[0m");
         scanf(" %c", &confirmChoice); // Adding space before %c to capture newline character properly
 
@@ -1831,7 +1873,7 @@ void deleteAccount()
             // Save the updated accounts to file
             saveAccountsToFile();
             saveRequestedAccountsToFile();
-            printf("\n\033[1;32m Account successfully deleted.\033[0m\n");
+            printf("\n\033[1;31m Account successfully deleted.\033[0m\n");
         }
         else if (confirmChoice == '2') // User chose "No"
         {
@@ -1985,62 +2027,66 @@ void clearScreen()
     printf("\033[H\033[J");
 }
 
-void printWelcomeMessage() {
+void printWelcomeMessage()
+{
     // Array to store a compact ASCII version of "WELCOME"
-    const char* welcome[5][7] = {
+    const char *welcome[5][7] = {
         {GREEN "W   W" RESET, GREEN "EEEEE" RESET, GREEN "L    " RESET, GREEN " CCC " RESET, GREEN " OOO " RESET, GREEN "M   M" RESET, GREEN "EEEEE" RESET},
         {GREEN "W   W" RESET, GREEN "E    " RESET, GREEN "L    " RESET, GREEN "C   C" RESET, GREEN "O   O" RESET, GREEN "MM MM" RESET, GREEN "E    " RESET},
         {GREEN "W W W" RESET, GREEN "EEE  " RESET, GREEN "L    " RESET, GREEN "C    " RESET, GREEN "O   O" RESET, GREEN "M M M" RESET, GREEN "EEE  " RESET},
         {GREEN "WW WW" RESET, GREEN "E    " RESET, GREEN "L    " RESET, GREEN "C   C" RESET, GREEN "O   O" RESET, GREEN "M   M" RESET, GREEN "E    " RESET},
-        {GREEN "W   W" RESET, GREEN "EEEEE" RESET, GREEN "LLLL " RESET, GREEN " CCC " RESET, GREEN " OOO " RESET, GREEN "M   M" RESET, GREEN "EEEEE" RESET}
-    };
+        {GREEN "W   W" RESET, GREEN "EEEEE" RESET, GREEN "LLLL " RESET, GREEN " CCC " RESET, GREEN " OOO " RESET, GREEN "M   M" RESET, GREEN "EEEEE" RESET}};
 
     // Array to store a compact ASCII version of "T"
-    const char* t[5][1] = {
+    const char *t[5][1] = {
         {MAGENTA "          #####" RESET},
         {MAGENTA "            #  " RESET},
         {MAGENTA "            #  " RESET},
         {MAGENTA "            #  " RESET},
-        {MAGENTA "            #  " RESET}
-    };
+        {MAGENTA "            #  " RESET}};
 
     // Array to store a compact ASCII version of "O"
-    const char* o[5][1] = {
+    const char *o[5][1] = {
         {MAGENTA " OOO " RESET},
         {MAGENTA "O   O" RESET},
         {MAGENTA "O   O" RESET},
         {MAGENTA "O   O" RESET},
-        {MAGENTA " OOO " RESET}
-    };
+        {MAGENTA " OOO " RESET}};
 
     // Array to store a compact ASCII version of "PSD BANK"
-    const char* psd_bank[5][8] = {
+    const char *psd_bank[5][8] = {
         {YELLOW "PPPP " RESET, YELLOW " SSSS" RESET, YELLOW "DDDD " RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN " A A " RESET, CYAN "NN     N" RESET, CYAN "K  KK" RESET},
         {YELLOW "P   P" RESET, YELLOW "S    " RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "B   B" RESET, CYAN "A   A" RESET, CYAN "N N    N" RESET, CYAN "K K " RESET},
         {YELLOW "PPPP " RESET, YELLOW " SSS " RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN "AAAAA" RESET, CYAN "N  N   N" RESET, CYAN "KK  " RESET},
         {YELLOW "P    " RESET, YELLOW "    S" RESET, YELLOW "D   D" RESET, RED "     " RESET, CYAN "B   B" RESET, CYAN "A   A" RESET, CYAN "N    N N" RESET, CYAN "K K " RESET},
-        {YELLOW "P    " RESET, YELLOW "SSSS " RESET, YELLOW "DDDD " RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN "A   A" RESET, CYAN "N     NN" RESET, CYAN "K  KK" RESET}
-    };
+        {YELLOW "P    " RESET, YELLOW "SSSS " RESET, YELLOW "DDDD " RESET, RED "     " RESET, CYAN "BBBB " RESET, CYAN "A   A" RESET, CYAN "N     NN" RESET, CYAN "K  KK" RESET}};
 
     // Print "WELCOME"
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 7; j++) {
-            printf("%s  ", welcome[i][j]);  
+    for (int i = 0; i < 5; i++)
+    {
+        printf("                          ");
+        for (int j = 0; j < 7; j++)
+        {
+            printf("%s  ", welcome[i][j]);
         }
-        printf("\n");  
+        printf("\n");
     }
 
     // Print "TO" with indentation
     printf("\n");
-    for (int i = 0; i < 5; i++) {
-        printf("       "); // Indentation for "TO"
+    for (int i = 0; i < 5; i++)
+    {
+        printf("                               "); // Indentation for "TO"
         printf("%s  %s\n", t[i][0], o[i][0]);
     }
 
     // Print "PSD BANK"
     printf("\n");
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 8; j++) {
+    for (int i = 0; i < 5; i++)
+    {
+        printf("                     ");
+        for (int j = 0; j < 8; j++)
+        {
             printf("%s  ", psd_bank[i][j]);
         }
         printf("\n");
