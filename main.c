@@ -1407,11 +1407,14 @@ void requestCard(struct Account *loggedInCustomer)
     if (choice == 1)
     {
         strcpy(newCardRequest.cardType, "Debit");
+        system("cls");
         printf("\n\033[1;33mYou've chosen to request a Debit Card.\033[0m\n");
     }
     else if (choice == 2)
     {
         strcpy(newCardRequest.cardType, "Credit");
+        system("cls");
+
         printf("\n\033[1;33mYou've chosen to request a Credit Card.\033[0m\n");
     }
     else
@@ -1425,8 +1428,9 @@ void requestCard(struct Account *loggedInCustomer)
     // Save the request
     cardRequests[cardRequestCount++] = newCardRequest;
     saveCardRequests(); // Save the updated requests to file
-    printf("\n\033[1;32m Your %s Card request has been successfully submitted! \033[0m\n", newCardRequest.cardType);
+    printf("\n\033[1;32mYour %s Card request has been successfully submitted! \033[0m\n", newCardRequest.cardType);
     printf("\033[1;36mYour request is now under review, and you'll be notified once processed. \033[0m\n");
+    sleep(5);
 }
 
 // Function for admin to view all pending card requests
@@ -1552,6 +1556,7 @@ void customerCardManagement(struct Account *loggedInCustomer)
         system("cls");
         printf("Redirecting to the Card Management...");
         clearScreen();
+
         printf("\n\033[1;34m=============== Card Management ===============\033[0m\n\n");
         printf("\033[1;36mWhat would you like to do today, %s?\033[0m\n\n", loggedInCustomer->firstName);
         printf("\033[1;32m1. Request a New Card\033[0m\n");
@@ -1635,9 +1640,9 @@ void customerCardManagement(struct Account *loggedInCustomer)
             }
             else
             {
-
+                system("cls");
                 printf("\n\033[1;31mNo cards linked to your account.\033[0m\n");
-                clearScreen();
+                sleep(3);
             }
             break;
         }
@@ -2021,6 +2026,7 @@ void removeUnfreezeRequest(int accountNumber)
 
 void clearScreen()
 {
+    printf("\033[1;31m \n\nPlease Do Not Press Any Key...\033[0m\n");
     // Delay for 3 seconds
     sleep(2);
     // ANSI escape code to clear the screen
