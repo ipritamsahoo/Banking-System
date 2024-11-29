@@ -5,4 +5,4 @@ You can view the presentation [here](https://github.com/ipritamsahoo/Banking-Sys
 
 
 ## Contact Information
-For any queries or collaboration, you can reach us at: [official.unsortedbuggers@gmail.com]
+For any queries or collaboration, you can reach us at: [unsortedbuggers.connect@gmail.com]
