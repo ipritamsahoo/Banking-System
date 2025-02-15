@@ -841,7 +841,6 @@ void adminMenu()
     }
 }
 
-// Function for customer login
 int customerLogin()
 {
     char mobileNo[100], password[50];
@@ -851,24 +850,76 @@ int customerLogin()
     printf("\033[1;36mEnter Your Mobile Number: \033[0m");
     scanf("%s", mobileNo);
 
-    int index = findAccountByMobileOnly(mobileNo); // Find by mobile number only
+    int index = findAccountByMobileOnly(mobileNo);
     if (index == -1)
     {
         printf("\033[1;31mAccount with this mobile number not found!\033[0m\n");
         return 0;
     }
 
-    while (1)
+    // Check if the account is already frozen
+    if (strcmp(accounts[index].status, "Frozen") == 0)
+    {
+        printf("\033[1;33mYour account is currently frozen. Please contact the admin.\033[0m\n");
+        int choice;
+        // Ask if they want to request to unfreeze the account
+        printf("\n\033[1;36mDo you want to request to unfreeze your account?\033[0m\n");
+        printf("1. Yes\n2. No\n\033[1;36mEnter your choice: \033[0m");
+        scanf("%d", &choice);
+
+        if (choice == 1)
+        {
+            // Send request to unfreeze
+            FILE *file = fopen("unfreezeRequests.txt", "a");
+            if (file == NULL)
+            {
+                printf("\033[1;31mError opening unfreeze request file! Please try again later.\033[0m\n");
+                return 0;
+            }
+            fprintf(file, "%d %s %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].middleName, accounts[index].lastName); // Store account number and name
+            fclose(file);
+            printf("\033[1;32mYour request to unfreeze your account has been submitted successfully.\033[0m\n");
+            return 0;
+        }
+        else
+        {
+            printf("\033[1;33mNo request submitted. Returning to the main menu.\033[0m\n");
+            return 0;
+        }
+    }
+
+    int passwordAttempts = 0;
+
+    while (passwordAttempts < 3)
     {
         printf("\033[1;36mEnter Your Password: \033[0m");
         scanf("%s", password);
 
-        index = findAccountByPassword(password);
-        if (index == -1)
+        if (strcmp(accounts[index].password, password) == 0)
         {
+            // Successful login
+            system("cls");
+            printf("\033[1;32mLogin successful! Welcome, %s %s %s.\033[0m\n",
+                   accounts[index].firstName, accounts[index].middleName, accounts[index].lastName);
+            clearScreen();
+            customerPostLoginMenu(&accounts[index]);
+            return 1;
+        }
+        else
+        {
+            passwordAttempts++;
             printf("\033[1;31mInvalid password!\033[0m\n");
 
-            // Provide forgot password option after failed login
+            if (passwordAttempts >= 3)
+            {
+                printf("\033[1;31mYou have exceeded the maximum number of password attempts.\033[0m\n");
+                printf("\033[1;31mYour account has been frozen.\033[0m\n");
+                strcpy(accounts[index].status, "Frozen");
+                saveAccountsToFile();
+                return 0;
+            }
+
+            // Offer the recovery option
             int choice;
             printf("\033[1;36m\n========================================\033[0m\n");
             printf("\033[1;31m            LOGIN FAILED                \033[0m\n");
@@ -877,26 +928,48 @@ int customerLogin()
             printf("\033[1;33m  1. Forgot Password\n");
             printf("  2. Try Again\033[0m\n\n");
             printf("Enter your choice (1-2): ");
-
             scanf("%d", &choice);
 
             if (choice == 1)
             {
-                // Forgot password flow
-                // Ask the security question
-                index = findAccountByMobileOnly(mobileNo);
+                // Forgot Password Flow with Security Question Attempts
                 printf("\033[1;34m\n--- FORGOT PASSWORD ---\033[0m\n\n");
                 printf("To reset your password, please answer the following security question:\n\n");
-
                 displaySecurityQuestion(accounts[index].securityQuestion);
+                int secAttempts = 0;
+                int securitySuccess = 0;
                 char answer[100];
-                printf("\n\033[1;33mEnter Your Answer: \033[0m");
-
-                scanf("%s", answer);
-
-                if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                while (secAttempts < 3)
                 {
-                    // Allow resetting the password
+                    printf("\n\033[1;33mEnter Your Answer: \033[0m");
+                    scanf("%s", answer);
+
+                    if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                    {
+                        securitySuccess = 1;
+                        break;
+                    }
+                    else
+                    {
+                        secAttempts++;
+                        printf("\033[1;31mIncorrect answer!\033[0m\n");
+                        if (secAttempts >= 3)
+                        {
+                            printf("\033[1;31mYou have exceeded the maximum number of security question attempts.\033[0m\n");
+                            printf("\033[1;31mYour account has been frozen.\033[0m\n");
+                            strcpy(accounts[index].status, "Frozen");
+                            saveAccountsToFile();
+                            return 0;
+                        }
+                        else
+                        {
+                            printf("\033[1;33mPlease try again.\033[0m\n");
+                        }
+                    }
+                }
+
+                if (securitySuccess)
+                {
                     char newPassword[50], confirmPassword[50];
                     printf("\n\033[1;32mAnswer is correct!\033[0m\n");
                     printf("Proceeding to password reset...\n\n");
@@ -910,13 +983,13 @@ int customerLogin()
 
                         if (strcmp(newPassword, confirmPassword) == 0)
                         {
-                            strcpy(accounts[index].password, newPassword); // Update password
+                            strcpy(accounts[index].password, newPassword);
+                            // Optionally update the request record if needed:
                             strcpy(accountRequests[index].password, newPassword);
                             printf("\n\033[1;32m========================================\033[0m\n");
                             printf("\033[1;32m       PASSWORD RESET SUCCESSFUL        \033[0m\n");
                             printf("\033[1;32m========================================\033[0m\n\n");
                             printf("You can now log in with your new password.\n");
-
                             break;
                         }
                         else
@@ -924,16 +997,13 @@ int customerLogin()
                             printf("\033[1;31mPasswords do not match! Please try again.\033[0m\n");
                         }
                     }
-                }
-                else
-                {
-                    printf("\033[1;31mIncorrect answer to the security question. Password reset failed.\033[0m\n");
-                    return 0;
+                    // After successful password reset, allow them to try logging in again.
+                    continue;
                 }
             }
             else if (choice == 2)
             {
-                // Allow user to try again
+                // Simply continue the loop to try entering the password again.
                 continue;
             }
             else
@@ -941,46 +1011,7 @@ int customerLogin()
                 printf("\033[1;31mInvalid choice! Please try again.\033[0m\n");
             }
         }
-        else if (strcmp(accounts[index].status, "Frozen") == 0)
-        {
-            printf("\033[1;33mYour account is currently frozen. Please contact the admin.\033[0m\n");
-            int choice;
-            // Ask if they want to request to unfreeze the account
-            printf("\n\033[1;36mDo you want to request to unfreeze your account?\033[0m\n");
-            printf("1. Yes\n2. No\n\033[1;36mEnter your choice: \033[0m");
-            scanf("%d", &choice);
-
-            if (choice == 1)
-            {
-                // Send request to unfreeze
-                FILE *file = fopen("unfreezeRequests.txt", "a");
-                if (file == NULL)
-                {
-                    printf("\033[1;31mError opening unfreeze request file! Please try again later.\033[0m\n");
-                    return 0;
-                }
-                fprintf(file, "%d %s %s %s\n", accounts[index].accountNumber, accounts[index].firstName, accounts[index].middleName, accounts[index].lastName); // Store account number and name
-                fclose(file);
-                printf("\033[1;32mYour request to unfreeze your account has been submitted successfully.\033[0m\n");
-                return 0;
-            }
-            else
-            {
-                printf("\033[1;33mNo request submitted. Returning to the main menu.\033[0m\n");
-                return 0;
-            }
-        }
-        else
-        {
-            // Successful login
-            system("cls");
-            printf("\033[1;32mLogin successful! Welcome, %s %s %s.\033[0m\n", accounts[index].firstName, accounts[index].middleName, accounts[index].lastName);
-            clearScreen();
-            customerPostLoginMenu(&accounts[index]);
-            return 1;
-        }
     }
-
     return 0;
 }
 
@@ -1046,7 +1077,6 @@ int findAccountByMobileOnly(const char *mobileNo)
     return -1; // Return -1 if no match is found
 }
 
-// Function to transfer money from one account to another
 void transferMoney(struct Account *loggedInCustomer)
 {
     int receiverAccountNumber;
@@ -1095,7 +1125,8 @@ void transferMoney(struct Account *loggedInCustomer)
         return;
     }
 
-    // Verify transaction PIN
+    // Verify transaction PIN with security feature
+    int pinAttempts = 0;
     while (1)
     {
         printf("\033[1;36mEnter your 4-digit transaction PIN: \033[0m");
@@ -1103,48 +1134,76 @@ void transferMoney(struct Account *loggedInCustomer)
 
         if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
         {
+            pinAttempts++;
             printf("\033[1;31mError: Invalid transaction PIN!\033[0m\n");
-            // return;
 
-            // Provide forgot PIN option after failed transaction
+            // If three incorrect attempts, freeze account and exit
+            if (pinAttempts >= 3)
+            {
+                printf("\033[1;31mYou have exceeded the maximum number of transaction PIN attempts.\033[0m\n");
+                printf("\033[1;31mYour account has been frozen.\033[0m\n");
+                strcpy(loggedInCustomer->status, "Frozen");
+                saveAccountsToFile();
+                return;
+            }
+
+            // Provide forgot PIN option after a failed attempt
             int choice;
             printf("\033[1;34m\n========================================\033[0m\n");
             printf("\033[1;34m       TRANSACTION AUTHENTICATION       \033[0m\n");
             printf("\033[1;34m========================================\033[0m\n\n");
-
             printf("Please choose an option:\n");
             printf("\033[1;33m  1. Forgot Transaction PIN\n");
             printf("  2. Try Again\033[0m\n\n");
             printf("Enter your choice (1-2): ");
-
             scanf("%d", &choice);
 
             if (choice == 1)
             {
-                // Forgot PIN flow
-                // Ask the security question
+                // Forgot PIN flow with security question attempts
                 int index = findAccountByMobileOnly(loggedInCustomer->mobileNo);
                 if (index == -1)
                 {
                     printf("\033[1;31m\nAccount not found for the provided mobile number.\033[0m\n");
-
                     return;
                 }
-
-                // Display the security question
                 printf("\033[1;34m\n--- FORGOT PIN ---\033[0m\n\n");
                 printf("To reset your transaction PIN, please answer the following security question:\n\n");
-
                 displaySecurityQuestion(accounts[index].securityQuestion);
+
+                int secPinAttempts = 0;
+                int correctAnswer = 0;
                 char answer[100];
-                printf("\n\033[1;33mEnter Your Answer: \033[0m");
-
-                scanf("%s", answer);
-
-                // Check the answer
-                if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                while (secPinAttempts < 3)
                 {
-                    // Allow resetting the PIN
+                    printf("\n\033[1;33mEnter Your Answer: \033[0m");
+                    scanf("%s", answer);
+                    if (strcmp(accounts[index].securityAnswer, answer) == 0)
+                    {
+                        correctAnswer = 1;
+                        break;
+                    }
+                    else
+                    {
+                        secPinAttempts++;
+                        printf("\033[1;31mIncorrect answer!\033[0m\n");
+                        if (secPinAttempts >= 3)
+                        {
+                            printf("\033[1;31mYou have exceeded the maximum number of attempts.\033[0m\n");
+                            printf("\033[1;31mYour account has been frozen.\033[0m\n");
+                            strcpy(loggedInCustomer->status, "Frozen");
+                            saveAccountsToFile();
+                            return;
+                        }
+                        else
+                        {
+                            printf("\033[1;33mPlease try again.\033[0m\n");
+                        }
+                    }
+                }
+
+                if (correctAnswer)
+                {
                     char newPIN[10], confirmPIN[10];
                     printf("\033[1;32m\nAnswer is correct!\033[0m\n");
                     printf("Proceeding to PIN reset...\n\n");
@@ -1163,7 +1222,6 @@ void transferMoney(struct Account *loggedInCustomer)
                             printf("\033[1;32m          PIN RESET SUCCESSFUL          \033[0m\n");
                             printf("\033[1;32m========================================\033[0m\n\n");
                             printf("You can now continue your transaction with the new PIN.\n");
-
                             break;
                         }
                         else
@@ -1171,13 +1229,6 @@ void transferMoney(struct Account *loggedInCustomer)
                             printf("\033[1;31m\nPINs do not match! Please try again.\033[0m\n");
                         }
                     }
-                }
-                else
-                {
-                    printf("\033[1;31m\nIncorrect answer to the security question.\033[0m\n");
-                    printf("PIN reset failed. Please contact support for assistance.\n");
-
-                    return;
                 }
             }
             else if (choice == 2)
@@ -1191,11 +1242,11 @@ void transferMoney(struct Account *loggedInCustomer)
         }
         else
         {
-            break; // PIN is correct
+            break; // Correct PIN entered, break out of loop
         }
     }
 
-    // Perform transfer
+    // Perform transfer after successful PIN verification
     loggedInCustomer->balance -= amount;
     accounts[receiverIndex].balance += amount;
 
@@ -1344,6 +1395,15 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
     int choice;
     while (1)
     {
+        // Check if the account is frozen; if so, log out and return to the login menu.
+        if (strcmp(loggedInCustomer->status, "Frozen") == 0)
+        {
+            clearscreen();
+            printf("\n\033[1;31mYour account has been frozen due to multiple failed attempts.\033[0m\n");
+            printf("\033[1;31mYou are now being logged out.\033[0m\n");
+            sleep(4); // Optional: give the user time to read the message.
+            return;   // Return to the login menu.
+        }
         // clearScreen();
         system("cls");
         printf("\n\033[1;35m========== Welcome to Your Personal Banking Portal ==========\033[0m\n");
@@ -2045,7 +2105,7 @@ void viewPendingUnfreezeRequests()
     int accountNumber;
     char name[100];
 
-    while (fscanf(file, "%d %s", &accountNumber, name) != EOF)
+    while (fscanf(file, "%d %s", &accountNumber, name) == 2)
     {
         printf("XXXXXXXX%d\t%s\n", accountNumber, name);
     }
