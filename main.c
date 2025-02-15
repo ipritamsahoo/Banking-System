@@ -1398,13 +1398,13 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         // Check if the account is frozen; if so, log out and return to the login menu.
         if (strcmp(loggedInCustomer->status, "Frozen") == 0)
         {
-            clearscreen();
+            
             printf("\n\033[1;31mYour account has been frozen due to multiple failed attempts.\033[0m\n");
             printf("\033[1;31mYou are now being logged out.\033[0m\n");
             sleep(4); // Optional: give the user time to read the message.
             return;   // Return to the login menu.
         }
-        // clearScreen();
+       
         system("cls");
         printf("\n\033[1;35m========== Welcome to Your Personal Banking Portal ==========\033[0m\n");
         printf("\033[1;36mHello, %s! What would you like to do today?\033[0m\n\n", loggedInCustomer->firstName);
