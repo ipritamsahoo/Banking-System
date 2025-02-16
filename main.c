@@ -1085,33 +1085,66 @@ void transferMoney(struct Account *loggedInCustomer)
 
     printf("\n\033[1;34m==================== Money Transfer ====================\033[0m\n\n");
 
-    // Input receiver account number
-    printf("\033[1;36mEnter The Last 4 Digits of The Receiver's Account Number: \033[0m");
-    scanf("%d", &receiverAccountNumber);
-
-    // Check if sender is trying to transfer to their own account
-    if (loggedInCustomer->accountNumber == receiverAccountNumber)
-    {
-        printf("\033[1;31mError: You cannot transfer money to your own account!\033[0m\n");
-        return;
-    }
-
-    // Find receiver's account
     int receiverIndex = -1;
-    for (int i = 0; i < accountCount; i++)
+    int choice;
+    while (1)
     {
-        if (accounts[i].accountNumber == receiverAccountNumber)
+        // Input receiver account number
+        printf("\033[1;36mEnter The Last 4 Digits of The Receiver's Account Number: \033[0m");
+        scanf("%d", &receiverAccountNumber);
+
+        // Check if sender is trying to transfer to their own account
+        if (loggedInCustomer->accountNumber == receiverAccountNumber)
         {
-            receiverIndex = i;
+            printf("\033[1;31mError: You cannot transfer money to your own account!\033[0m\n");
+            printf("\033[1;31mPlease enter a different account number.\033[0m\n");
+            printf("\033[1;33mDo you want to try again?\033[0m\n");
+            printf("\033[1;33m1. Yes\n2. No\033[0m\n");
+            printf("\033[1;33mEnter your choice: \033[0m");
+            scanf("%d", &choice);
+            if (choice == 1)
+            {
+                continue;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        // Find receiver's account
+
+        for (int i = 0; i < accountCount; i++)
+        {
+            if (accounts[i].accountNumber == receiverAccountNumber)
+            {
+                receiverIndex = i;
+                break;
+            }
+        }
+
+        // Check if the receiver's account exists
+        if (receiverIndex == -1)
+        {
+            printf("\033[1;31mError: Receiver's account not found! Please verify the account number.\033[0m\n");
+            printf("\033[1;31mPlease enter a different account number.\033[0m\n");
+            printf("\033[1;33mDo you want to try again?\033[0m\n");
+            printf("\033[1;33m1. Yes\n2. No\033[0m\n");
+            printf("\033[1;33mEnter your choice: \033[0m");
+            scanf("%d", &choice);
+            if (choice == 1)
+            {
+                continue;
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
             break;
         }
-    }
-
-    // Check if the receiver's account exists
-    if (receiverIndex == -1)
-    {
-        printf("\033[1;31mError: Receiver's account not found! Please verify the account number.\033[0m\n");
-        return;
     }
 
     // Input transfer amount
@@ -1398,13 +1431,12 @@ void customerPostLoginMenu(struct Account *loggedInCustomer)
         // Check if the account is frozen; if so, log out and return to the login menu.
         if (strcmp(loggedInCustomer->status, "Frozen") == 0)
         {
-            
             printf("\n\033[1;31mYour account has been frozen due to multiple failed attempts.\033[0m\n");
             printf("\033[1;31mYou are now being logged out.\033[0m\n");
             sleep(4); // Optional: give the user time to read the message.
             return;   // Return to the login menu.
         }
-       
+        // clearScreen();
         system("cls");
         printf("\n\033[1;35m========== Welcome to Your Personal Banking Portal ==========\033[0m\n");
         printf("\033[1;36mHello, %s! What would you like to do today?\033[0m\n\n", loggedInCustomer->firstName);
