@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <conio.h>
 
 #define MAX_ACCOUNTS 100
 #define MAX_REQUESTS 100
@@ -141,6 +142,7 @@ int readCredentials(Admin admins[], int maxAdmins);
 int isValidPANFormat(char *pan);
 void toUpperCase(char *str);
 void clearScreen();
+void readPassword(char *password, int maxLength);
 
 // Function to save approved accounts to a text file
 void saveAccountsToFile()
@@ -470,14 +472,33 @@ void requestAccountCreation()
         }
     }
 
-    // Password confirmation loop
+    // // Password confirmation loop
+    // while (1)
+    // {
+    //     printf("\033[1;36mSet a Password for Your Account: \033[0m");
+    //     scanf("%s", newRequest.password);
+
+    //     printf("\033[1;36mConfirm Your Password: \033[0m");
+    //     scanf("%s", confirmPassword);
+
+    //     if (strcmp(newRequest.password, confirmPassword) == 0)
+    //     {
+    //         printf("\033[1;32mPassword confirmed!\033[0m\n");
+    //         break; // Passwords match, proceed
+    //     }
+    //     else
+    //     {
+    //         printf("\033[1;31mPasswords do not match! Please retype your password.\033[0m\n");
+    //     }
+    // }
+
     while (1)
     {
         printf("\033[1;36mSet a Password for Your Account: \033[0m");
-        scanf("%s", newRequest.password);
+        readPassword(newRequest.password, sizeof(newRequest.password));
 
         printf("\033[1;36mConfirm Your Password: \033[0m");
-        scanf("%s", confirmPassword);
+        readPassword(confirmPassword, sizeof(confirmPassword));
 
         if (strcmp(newRequest.password, confirmPassword) == 0)
         {
@@ -490,11 +511,38 @@ void requestAccountCreation()
         }
     }
 
+    // // Transaction PIN confirmation loop
+    // while (1)
+    // {
+    //     printf("\033[1;36mSet a 4-digit Transaction PIN for Your Account: \033[0m");
+    //     scanf("%s", transactionPin);
+
+    //     if (strlen(transactionPin) != 4)
+    //     {
+    //         printf("\033[1;31mInvalid PIN! Please enter a 4-digit PIN.\033[0m\n");
+    //         continue;
+    //     }
+
+    //     printf("\033[1;36mConfirm Your Transaction PIN: \033[0m");
+    //     scanf("%s", confirmTransactionPin);
+
+    //     if (strcmp(transactionPin, confirmTransactionPin) == 0)
+    //     {
+    //         strcpy(newRequest.transactionPin, transactionPin); // Store the confirmed PIN
+    //         printf("\033[1;32mTransaction PIN confirmed!\033[0m\n");
+    //         break; // PINs match, proceed
+    //     }
+    //     else
+    //     {
+    //         printf("\033[1;31mTransaction PINs do not match! Please retype your PIN.\033[0m\n");
+    //     }
+    // }
+
     // Transaction PIN confirmation loop
     while (1)
     {
         printf("\033[1;36mSet a 4-digit Transaction PIN for Your Account: \033[0m");
-        scanf("%s", transactionPin);
+        readPassword(transactionPin, sizeof(transactionPin));
 
         if (strlen(transactionPin) != 4)
         {
@@ -503,7 +551,7 @@ void requestAccountCreation()
         }
 
         printf("\033[1;36mConfirm Your Transaction PIN: \033[0m");
-        scanf("%s", confirmTransactionPin);
+        readPassword(confirmTransactionPin, sizeof(confirmTransactionPin));
 
         if (strcmp(transactionPin, confirmTransactionPin) == 0)
         {
@@ -893,7 +941,7 @@ int customerLogin()
     while (passwordAttempts < 3)
     {
         printf("\033[1;36mEnter Your Password: \033[0m");
-        scanf("%s", password);
+        readPassword(password, sizeof(password));
 
         if (strcmp(accounts[index].password, password) == 0)
         {
@@ -977,9 +1025,9 @@ int customerLogin()
                     while (1)
                     {
                         printf("\033[1;33mEnter a New Password: \033[0m");
-                        scanf("%s", newPassword);
+                        readPassword(password, sizeof(password));
                         printf("\033[1;33mConfirm Your New Password: \033[0m");
-                        scanf("%s", confirmPassword);
+                        readPassword(password, sizeof(password));
 
                         if (strcmp(newPassword, confirmPassword) == 0)
                         {
@@ -1163,7 +1211,7 @@ void transferMoney(struct Account *loggedInCustomer)
     while (1)
     {
         printf("\033[1;36mEnter your 4-digit transaction PIN: \033[0m");
-        scanf("%s", enteredPin);
+        readPassword(enteredPin, sizeof(enteredPin));
 
         if (strcmp(loggedInCustomer->transactionPin, enteredPin) != 0)
         {
@@ -1244,9 +1292,9 @@ void transferMoney(struct Account *loggedInCustomer)
                     while (1)
                     {
                         printf("\033[1;33mEnter a New 4-digit PIN: \033[0m");
-                        scanf("%s", newPIN);
+                        readPassword(newPIN, sizeof(newPIN));
                         printf("\033[1;33mConfirm Your New PIN: \033[0m");
-                        scanf("%s", confirmPIN);
+                        readPassword(confirmPIN, sizeof(confirmPIN));
 
                         if (strcmp(newPIN, confirmPIN) == 0)
                         {
@@ -1824,13 +1872,13 @@ void changeCardPin(struct Card *card)
         while (1)
         {
             printf("\033[1;36mEnter a new 4-digit PIN: \033[0m");
-            scanf("%s", newPin);
+            readPassword(newPin, sizeof(newPin));
 
             // Ensure the entered PIN is exactly 4 digits
             if (strlen(newPin) == 4)
             {
                 printf("\033[1;36mConfirm the new PIN: \033[0m");
-                scanf("%s", confirmPin);
+                readPassword(confirmPin, sizeof(confirmPin));
 
                 // Check if the confirmed PIN matches
                 if (strcmp(newPin, confirmPin) == 0)
@@ -1859,7 +1907,7 @@ void changeCardPin(struct Card *card)
         char currentPin[6];
         printf("\n\033[1;33mA PIN is already set for this card.\033[0m\n");
         printf("\033[1;36mEnter current PIN: \033[0m");
-        scanf("%s", currentPin);
+        readPassword(currentPin, sizeof(currentPin));
 
         // Verify the current PIN
         if (strcmp(card->cardPin, currentPin) == 0)
@@ -1870,13 +1918,13 @@ void changeCardPin(struct Card *card)
             while (1)
             {
                 printf("\033[1;36mEnter a new 4-digit PIN: \033[0m");
-                scanf("%s", newPin);
+                readPassword(newPin, sizeof(newPin));
 
                 // Ensure the new PIN is exactly 4 digits
                 if (strlen(newPin) == 4)
                 {
                     printf("\033[1;36mConfirm the new PIN: \033[0m");
-                    scanf("%s", confirmPin);
+                    readPassword(confirmPin, sizeof(confirmPin));
 
                     // Check if the confirmed new PIN matches
                     if (strcmp(newPin, confirmPin) == 0)
@@ -2185,6 +2233,36 @@ void clearScreen()
     printf("\033[H\033[J");
 }
 
+// Function to read password and display asterisks
+void readPassword(char *password, int maxLength)
+{
+    int index = 0;
+    char ch;
+    while (1)
+    {
+        ch = getch();
+        if (ch == '\r')
+        { // Enter key pressed
+            password[index] = '\0';
+            printf("\n");
+            break;
+        }
+        else if (ch == '\b')
+        { // Backspace key pressed
+            if (index > 0)
+            {
+                index--;
+                printf("\b \b");
+            }
+        }
+        else if (index < maxLength - 1)
+        {
+            password[index++] = ch;
+            printf("*");
+        }
+    }
+}
+
 void printWelcomeMessage()
 {
     // Array to store a compact ASCII version of "WELCOME"
@@ -2298,9 +2376,9 @@ int main()
             char password[MAX_TITLE_LENGTH];
             system("cls");
             printf("Enter Admin Username: ");
-            scanf("%s", username);
+            readPassword(username, sizeof(username));
             printf("Enter Admin Password: ");
-            scanf("%s", password);
+            readPassword(password, sizeof(password));
 
             int loginSuccess = 0;
             for (int i = 0; i < numAdmins; i++)
