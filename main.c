@@ -1025,9 +1025,9 @@ int customerLogin()
                     while (1)
                     {
                         printf("\033[1;33mEnter a New Password: \033[0m");
-                        readPassword(password, sizeof(password));
+                        readPassword(newPassword, sizeof(newPassword));
                         printf("\033[1;33mConfirm Your New Password: \033[0m");
-                        readPassword(password, sizeof(password));
+                        readPassword(confirmPassword, sizeof(confirmPassword));
 
                         if (strcmp(newPassword, confirmPassword) == 0)
                         {
